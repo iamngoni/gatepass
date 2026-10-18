@@ -77,6 +77,20 @@ class AtgGateRepository implements GateRepository {
 
   String? get _firebaseUid => _auth.session?.uid;
 
+  Future<dynamic> _postForm(
+    String path,
+    Map<String, String> body, {
+    String context = '',
+  }) async {
+    return _http.send(
+      'POST',
+      Uri.parse('${AtgConfig.apiBase}$path'),
+      headers: await _authHeaders(),
+      formBody: body,
+      context: context.isEmpty ? path : context,
+    );
+  }
+
   Future<dynamic> _post(String path, Object body, {String context = ''}) async {
     return _http.send(
       'POST',
@@ -332,9 +346,11 @@ class AtgGateRepository implements GateRepository {
 
   @override
   Future<Invite> revokeInvite(String inviteId) async {
+    // Verified live: this endpoint ignores a JSON body and answers
+    // `500 id can't be null`. It wants the id as a form/query parameter.
     final body = {AtgConfig.fProfileId: inviteId};
     _guardWrite('revoke invite', AtgConfig.deleteVisitorPath, body);
-    await _post(AtgConfig.deleteVisitorPath, body, context: 'revoke');
+    await _postForm(AtgConfig.deleteVisitorPath, body, context: 'revoke');
     // The app refreshes from this returned invite; we only know its new status.
     return _revokedStub(inviteId);
   }
@@ -496,7 +512,12 @@ class AtgGateRepository implements GateRepository {
     final until = explicitUntil ?? fallbackDraft?.until ?? rememberTill ?? from;
     final fromText = _firstString(m, const ['validFromDateText']);
     final tillText = _firstString(m, const ['validTillDateText']);
-    final windowText = fromText != null && tillText != null
+    // ATG's own text has no time component, so it is only a fallback for
+    // responses that lack the raw timestamps.
+    final windowText =
+        (explicitFrom == null || explicitUntil == null) &&
+            fromText != null &&
+            tillText != null
         ? '$fromText – $tillText'
         : null;
     final visitsAllowed = m['visitsAllowed'];
