@@ -34,7 +34,9 @@ class AtgHttp {
     r'[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{8,}',
   );
   static final _opaqueCredential = RegExp(r'[A-Za-z0-9_-]{80,}');
-  static final _e164Phone = RegExp(r'(?<![0-9])\+[1-9][0-9]{7,14}(?![0-9])');
+  // No lookbehind: ATG builds account ids by appending the phone number to the
+  // uid (`<uid>+27831234567`), so a digit often precedes the `+`.
+  static final _e164Phone = RegExp(r'\+[1-9][0-9]{7,14}(?![0-9])');
   static final _credentialKeyFallback = RegExp(
     r'("(?:refreshToken|refresh_token|idToken|id_token|access_token|token|customToken|custom_token)"\s*:\s*")[^"]*(")',
     caseSensitive: false,

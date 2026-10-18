@@ -20,6 +20,7 @@ void main() {
             'access_token': 'access-token-value',
             'refresh_token': 'refresh-token-value',
             'hostSharedKey': 'host-shared-key-value',
+            'id': 'uid1+27831234567',
             'contact': '+27831234567',
             'profile': {'name': 'Resident'},
           }),
