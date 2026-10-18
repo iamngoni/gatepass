@@ -205,6 +205,8 @@ class AtgHttp {
       'securitytoken',
       'xidtoken',
       'apikey',
+      'hostsharedkey',
+      'sharedkey',
     };
     return names.contains(_normalizeKey(key));
   }

@@ -19,6 +19,7 @@ void main() {
           jsonEncode({
             'access_token': 'access-token-value',
             'refresh_token': 'refresh-token-value',
+            'hostSharedKey': 'host-shared-key-value',
             'contact': '+27831234567',
             'profile': {'name': 'Resident'},
           }),
@@ -41,6 +42,8 @@ void main() {
           jsonBody: {
             'refreshToken': 'refresh-token-value',
             'id_token': 'id-token-value',
+            'hostSharedKey': 'host-shared-key-value',
+            'sharedKey': 'shared-key-value',
             'contact': '+27831234567',
           },
           context: 'redaction-test',
@@ -59,6 +62,8 @@ void main() {
         'refresh-token-value',
         'id-token-value',
         'access-token-value',
+        'host-shared-key-value',
+        'shared-key-value',
         '+27831234567',
       ]) {
         expect(output, isNot(contains(secret)));
