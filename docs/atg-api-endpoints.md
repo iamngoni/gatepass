@@ -233,3 +233,26 @@ tracked locally by the app.
 `GET /api/entries/v2/getList?...` returns `403`, and the account's
 `accessPermissions` show entries disabled. The Activity tab stays empty rather
 than fabricating history.
+
+### Write verification (one throwaway invite, live account)
+
+Exercised end to end with the repository code on 2026-10-19, then removed:
+
+- `POST /api/v5/visitor/profile` with a JSON body **succeeded** (`200`) and
+  returned the created record: numeric `id`, `code`, `link`, `linkInvitation`,
+  `validFrom`, `validTill`, `validFromDateText`, `validTillDateText`.
+  The composed body was:
+  `{uid, name, surname, categoryId, validFrom, validTill, visitsAllowed, notifyOn}`.
+  `categoryId` came from `GET /api/visitor/categories` — this estate's usable
+  category is `Invitation` (`Blocked` is the other one). The id is per-estate,
+  so it must be read, not hardcoded.
+- `POST /api/visitor/profile/delete` with the id in a **JSON body fails** with
+  `500 java.io.IOException: id can't be null`. The same call with the id as a
+  **query parameter or form field** returns `200`. The endpoint ignores JSON.
+- After the form/query delete, `GET /api/visitor/v3/profiles` returned only the
+  original invite, so the throwaway record was really gone.
+
+`/api/visitor/v4/share` is called by ATG's web client through the same transport
+helper as the delete call, so expect it to want form/query parameters too; it
+has not been exercised from this app. The app does not auto-share on create —
+the created profile already returns its code and link.
