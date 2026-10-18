@@ -23,10 +23,27 @@ flutter run
 ```
 Sign in with the mobile number your estate has on file; the OTP comes by SMS.
 
-## Verify-first workflow (important)
-The endpoints, auth and headers are recovered from the app binary with high
-confidence. The **JSON request/response shapes are inferred** — the AOT snapshot
-doesn't keep field names next to their class. So:
+## Login (exact, recovered from ATG's web client)
+ATG's own web app (`app.atthegate.biz`) is a Flutter web build, so its request
+bodies are readable in `main.dart.js`. That gave the exact OTP shapes:
+
+```jsonc
+// POST /open/login/start
+{"loginString":"+27…","channel":"sms","deviceId":"…",
+ "appVersion":"28.2.2","appBuildNumber":"280202","platform":"android"}
+
+// POST /open/login/check
+{"contact":"+27…","code":"123456","deviceId":"…",
+ "appVersion":"28.2.2","appBuildNumber":"280202","platform":"android"}
+```
+
+The check response carries the Firebase custom token under `token`. A live probe
+with this body returns `{"error":"Invalid verification code"}` rather than
+`{"error":"Phone number or code missing"}`, confirming the field names.
+
+## Visitor fields are still inferred
+The visitor/invite JSON shapes are **inferred** — the AOT snapshot doesn't keep
+field names next to their class. So:
 
 1. Leave `AtgConfig.dryRunWrites = true`. Create/revoke will compose the exact
    request and **throw instead of sending**, so a wrong body can't put a junk
@@ -37,10 +54,6 @@ doesn't keep field names next to their class. So:
    (e.g. `dateFrom` vs `date_from`, `uid` vs `id`).
 4. Only then set `dryRunWrites = false` to let create/revoke actually send —
    test with one throwaway invite first, and watch the log.
-
-If sign-in itself fails, read the logged `login/check` response: the Firebase
-custom token is under some key — add it to `AtgConfig.customTokenKeys`, and
-check whether `/open/login/start` wants `mobile` or `phoneNumber`.
 
 ## If nothing reaches `api.atthegate.biz`
 Then the real app is certificate-pinning and so is your capture. The client code

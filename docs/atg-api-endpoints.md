@@ -31,8 +31,8 @@ server was touched. Dart package name inside the app: `atg_user_app`. HTTP clien
 
 ## Auth flow (confirmed strings: `createAccountWithCustomToken`, `IdTokenResult`, `AuthInterceptor`, `x-id-token`)
 
-1. `POST /open/login/start` — body: mobile number (or email). Triggers the OTP SMS.
-2. `POST /open/login/check` — body: mobile + 6-digit code. Returns a **Firebase custom token**.
+1. `POST /open/login/start` — body: `loginString`, optional `channel`/`captchaToken`, `deviceId`, `appVersion`, `appBuildNumber`, `platform`. Triggers the OTP SMS.
+2. `POST /open/login/check` — body: `contact`, `code`, `deviceId`, `appVersion`, `appBuildNumber`, `platform`. Returns `{"token": "<firebase custom token>"}`. (Both shapes are exact, from ATG's Flutter web client at `app.atthegate.biz`.)
 3. App calls Firebase Auth `signInWithCustomToken` (project `helpful-data-424`) → gets a
    **Firebase ID token** + refresh token.
 4. Every `/api/...` request carries header **`x-id-token: <firebase id token>`**

@@ -51,7 +51,8 @@ class AtgConfig {
   static const loginStartPath = '/open/login/start'; // POST: send OTP
   static const loginCheckPath = '/open/login/check'; // POST: verify OTP
   static const profileFullPath = '/api/profile/full'; // GET: resident + sites
-  static const invitesListPath = '/api/visitor/v3/profiles'; // GET: list invites
+  static const invitesListPath =
+      '/api/visitor/v3/profiles'; // GET: list invites
   static const visitorDetailPath = '/api/v5/visitor/profile'; // GET: one invite
   static const createVisitorPath = '/api/visitor'; // POST: create invite
   static const shareVisitorPath = '/api/visitor/v4/share'; // POST: send invite
@@ -61,19 +62,30 @@ class AtgConfig {
   static const entriesFilterPath = '/api/entries/filter'; // POST/GET
   static const notificationAckPath = '/api/notification/acknowledge'; // POST
 
-  // --- Login request. CONFIRMED from a live 400 ("Login string too short"):
-  // the field is `loginString` (not `mobile`), and the number is E.164 like
-  // +27XXXXXXXXX (the binary uses `phoneE164` / `isValidPhoneE164`).
-  // `loginType` and `channel` are seen in the binary; their exact values are
-  // inferred — if the backend rejects them, the error log will say so. ---
+  // --- Login. Recovered verbatim from ATG's own web client
+  // (app.atthegate.biz/main.dart.js, version 28.2.5) — exact, not inferred:
+  //   /open/login/start → {loginString, channel?, captchaToken?, deviceId,
+  //                       appVersion, appBuildNumber, platform}
+  //   /open/login/check → {contact, code, deviceId, appVersion,
+  //                       appBuildNumber, platform}
+  // A live probe with this check body returns "Invalid verification code"
+  // instead of "Phone number or code missing", confirming the field names.
   static const fLoginString = 'loginString';
-  static const fLoginType = 'loginType';
   static const fChannel = 'channel';
-  static const fSmsCode = 'smsCode'; //         /open/login/check code field (CONFIRMED)
-  static const fLoginAttempt =
-      'loginAttempt'; //                         id from /start, echoed to /check
-  static const loginTypeMobile = 'mobile'; //   /start accepts this; server echoes 'phone'
-  static const loginChannelSms = 'sms'; //      the app also offers 'whatsapp'
+  static const fContact = 'contact';
+  static const fCode = 'code';
+  static const fDeviceId = 'deviceId';
+  static const fAppVersion = 'appVersion';
+  static const fAppBuildNumber = 'appBuildNumber';
+  static const fPlatform = 'platform';
+
+  static const loginChannelSms = 'sms';
+
+  /// Identity the OTP calls report. These match the current ATG Android build
+  /// (manifest versionName 28.2.2 / versionCode 280202).
+  static const appVersion = '28.2.2';
+  static const appBuildNumber = '280202';
+  static const platform = 'android';
 
   // --- INFERRED visitor request field names. Fix from the logged raw JSON. ---
   static const fMobile = 'mobile';
@@ -90,12 +102,13 @@ class AtgConfig {
   static const fShareLink = 'shareLink';
   static const fProfileId = 'uid'; // id used by delete/share: maybe 'id'
 
-  /// The login-check response carries a Firebase custom token; its key is
-  /// unknown, so [AtgAuth] searches these candidates for a JWT-looking value.
+  /// `/open/login/check` returns the Firebase custom token under `token`
+  /// (ATG's web client passes it straight to signInWithCustomToken). The other
+  /// keys are fallbacks for a renamed envelope.
   static const customTokenKeys = [
+    'token',
     'customToken',
     'custom_token',
-    'token',
     'authToken',
     'firebaseToken',
     'jwt',

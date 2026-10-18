@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
@@ -50,19 +51,28 @@ class AtgHttp {
       // application/x-www-form-urlencoded. encodeQueryComponent escapes '+' as
       // %2B, so an E.164 number survives (a raw '+' would be read as a space).
       sent = formBody.entries
-          .map((e) =>
-              '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}')
+          .map(
+            (e) =>
+                '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}',
+          )
           .join('&');
-      req.headers.contentType =
-          ContentType('application', 'x-www-form-urlencoded', charset: 'utf-8');
+      req.headers.contentType = ContentType(
+        'application',
+        'x-www-form-urlencoded',
+        charset: 'utf-8',
+      );
       req.write(sent);
     } else if (jsonBody != null) {
       sent = jsonEncode(jsonBody);
       req.headers.contentType = ContentType.json;
       req.write(sent);
     }
-    _log('→ $method ${url.path.isEmpty ? url : url.path}', context, sent,
-        headers: headers);
+    _log(
+      '→ $method ${url.path.isEmpty ? url : url.path}',
+      context,
+      sent,
+      headers: headers,
+    );
 
     final res = await req.close();
     final text = await res.transform(utf8.decoder).join();
@@ -141,9 +151,9 @@ class AtgSession {
 
 /// The two-step OTP sign-in and the Firebase custom-token → ID-token exchange.
 ///
-/// Flow (recovered from the app):
-///  1. POST /open/login/start  { mobile }                 → sends the SMS code
-///  2. POST /open/login/check  { mobile, code }           → a Firebase custom token
+/// Flow (recovered verbatim from ATG's web client):
+///  1. POST /open/login/start  {loginString, channel, deviceId, …} → SMS code
+///  2. POST /open/login/check  {contact, code, deviceId, …}       → custom token
 ///  3. identitytoolkit signInWithCustomToken              → idToken + refreshToken
 ///  4. securetoken /v1/token (refresh_token grant)        → renew idToken
 class AtgAuth {
@@ -152,58 +162,52 @@ class AtgAuth {
   final AtgHttp _http;
   AtgSession? session;
 
-  /// From /open/login/start: the attempt id and the server's normalised login
-  /// type ('phone'), both sent back to /open/login/check.
-  String? _loginAttempt;
-  String? _serverLoginType;
+  /// Stable per-install id. The OTP flow pairs start/check through this and the
+  /// backend records the device; persisting it in the app's temp directory
+  /// keeps it across relaunches without adding a storage plugin.
+  static final String _deviceId = _loadDeviceId();
 
   bool get isSignedIn => session != null;
 
+  /// Sends the OTP. The body is ATG's own web-client shape: `loginString` and
+  /// `channel` carry the identity, with device/app metadata alongside.
   Future<void> startLogin(String phoneE164) async {
-    final res = await _http.send(
+    await _http.send(
       'POST',
       Uri.parse('${AtgConfig.apiBase}${AtgConfig.loginStartPath}'),
       jsonBody: {
         AtgConfig.fLoginString: phoneE164,
-        AtgConfig.fLoginType: AtgConfig.loginTypeMobile,
         AtgConfig.fChannel: AtgConfig.loginChannelSms,
+        AtgConfig.fDeviceId: _deviceId,
+        AtgConfig.fAppVersion: AtgConfig.appVersion,
+        AtgConfig.fAppBuildNumber: AtgConfig.appBuildNumber,
+        AtgConfig.fPlatform: AtgConfig.platform,
       },
       context: 'login/start',
     );
-    if (res is Map) {
-      _loginAttempt = res['loginAttempt'] as String?;
-      _serverLoginType = res['loginType'] as String?;
-    }
   }
 
-  /// Verifies the OTP and, on success, signs in to Firebase so [session] holds
-  /// a usable ID token.
+  /// Verifies the OTP and exchanges the returned Firebase custom token for an
+  /// ID token. The check body is the web client's exact shape
+  /// `{contact, code, deviceId, appVersion, appBuildNumber, platform}`.
+  /// Confirmed live: it gets past "Phone number or code missing".
   Future<void> verifyAndExchange(String phoneE164, String code) async {
-    final loginType = _serverLoginType ?? AtgConfig.loginTypeMobile;
-    // OPEN PROBLEM — /open/login/check body structure.
-    // Confirmed by live responses: the server Gson-parses a JSON OBJECT body
-    // (a form body throws "Expected BEGIN_OBJECT but was STRING"), but every
-    // flat shape we tried — {loginString}, {phoneNumber}, with code/smsCode,
-    // with loginAttempt, even all at once, and with query params — returns
-    // {"error":"Phone number or code missing"}. So the phone+code sit under a
-    // nesting or exact @SerializedName we can't recover by guessing.
-    // Resolve from a Blutter decompile (needs an arm64 build of the APK) or a
-    // real request capture, then correct this body. Guessing further just
-    // spams OTPs and ATG's server, so we stop here.
     final res = await _http.send(
       'POST',
       Uri.parse('${AtgConfig.apiBase}${AtgConfig.loginCheckPath}'),
       jsonBody: {
-        'phoneNumber': phoneE164,
-        AtgConfig.fLoginString: phoneE164,
-        AtgConfig.fLoginType: loginType,
-        'code': code,
-        AtgConfig.fSmsCode: code,
-        AtgConfig.fLoginAttempt: ?_loginAttempt,
+        AtgConfig.fContact: phoneE164,
+        AtgConfig.fCode: code,
+        AtgConfig.fDeviceId: _deviceId,
+        AtgConfig.fAppVersion: AtgConfig.appVersion,
+        AtgConfig.fAppBuildNumber: AtgConfig.appBuildNumber,
+        AtgConfig.fPlatform: AtgConfig.platform,
       },
       context: 'login/check',
     );
-    final customToken = _findCustomToken(res);
+    final customToken =
+        (res is Map ? res[AtgConfig.customTokenKeys.first] : null) as String? ??
+        _findCustomToken(res);
     if (customToken == null) {
       throw AtgException(
         'No custom token found in the login response. Read the logged JSON '
@@ -221,11 +225,15 @@ class AtgAuth {
     final res = await _http.send(
       'POST',
       Uri.parse(AtgConfig.secureTokenUrl),
-      jsonBody: {'grant_type': 'refresh_token', 'refresh_token': s.refreshToken},
+      jsonBody: {
+        'grant_type': 'refresh_token',
+        'refresh_token': s.refreshToken,
+      },
       context: 'firebase/token',
     );
     final map = _asMap(res);
-    s.idToken = (map['id_token'] ?? map['access_token']) as String? ?? s.idToken;
+    s.idToken =
+        (map['id_token'] ?? map['access_token']) as String? ?? s.idToken;
     s.refreshToken = map['refresh_token'] as String? ?? s.refreshToken;
     s.expiresAt = _expiry(map['expires_in']);
     s.uid = map['user_id'] as String? ?? s.uid;
@@ -263,8 +271,7 @@ class AtgAuth {
       if (node is Map) {
         node.forEach((key, value) {
           if (found != null) return;
-          final isTokenKey =
-              AtgConfig.customTokenKeys.contains(key.toString());
+          final isTokenKey = AtgConfig.customTokenKeys.contains(key.toString());
           if (isTokenKey && value is String && value.split('.').length >= 2) {
             found = value;
           } else {
@@ -288,5 +295,30 @@ class AtgAuth {
   static DateTime _expiry(Object? expiresIn) {
     final seconds = int.tryParse('${expiresIn ?? ''}') ?? 3600;
     return DateTime.now().add(Duration(seconds: seconds));
+  }
+
+  static String _loadDeviceId() {
+    final file = File('${Directory.systemTemp.path}/gatepass_device_id');
+    try {
+      if (file.existsSync()) {
+        final saved = file.readAsStringSync().trim();
+        if (saved.isNotEmpty) return saved;
+      }
+      final id = _uuid4();
+      file.writeAsStringSync(id);
+      return id;
+    } on FileSystemException {
+      return _uuid4();
+    }
+  }
+
+  static String _uuid4() {
+    final random = Random.secure();
+    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
+    bytes[8] = (bytes[8] & 0x3f) | 0x80; // RFC 4122 variant
+    final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+    return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
+        '${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
   }
 }
