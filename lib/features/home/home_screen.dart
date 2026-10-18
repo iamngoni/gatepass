@@ -41,6 +41,11 @@ class HomeScreen extends StatelessWidget {
               children: [
                 const Expanded(child: _SiteSwitcher()),
                 GpIconButton(
+                  icon: GpIcons.refresh,
+                  label: 'Refresh',
+                  onPressed: () => state.refresh(),
+                ),
+                GpIconButton(
                   icon: GpIcons.pass,
                   label: 'My pass',
                   onPressed: () => openPass(context),

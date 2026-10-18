@@ -67,8 +67,9 @@ class AtgHttp {
       req.headers.contentType = ContentType.json;
       req.write(sent);
     }
+    final shown = url.hasQuery ? '${url.path}?${url.query}' : url.path;
     _log(
-      '→ $method ${url.path.isEmpty ? url : url.path}',
+      '→ $method ${shown.isEmpty ? url : shown}',
       context,
       sent,
       headers: headers,
@@ -157,10 +158,18 @@ class AtgSession {
 ///  3. identitytoolkit signInWithCustomToken              → idToken + refreshToken
 ///  4. securetoken /v1/token (refresh_token grant)        → renew idToken
 class AtgAuth {
-  AtgAuth(this._http);
+  AtgAuth(this._http) {
+    _restore();
+  }
 
   final AtgHttp _http;
   AtgSession? session;
+
+  /// The Firebase refresh token is kept in the app sandbox so a relaunch (or a
+  /// debug hot restart) doesn't force another SMS. It is a credential: the
+  /// directory is private to the app, and nothing here is ever logged.
+  static final String _sessionPath =
+      '${Directory.systemTemp.path}/gatepass_session.json';
 
   /// Stable per-install id. The OTP flow pairs start/check through this and the
   /// backend records the device; persisting it in the app's temp directory
@@ -237,9 +246,18 @@ class AtgAuth {
     s.refreshToken = map['refresh_token'] as String? ?? s.refreshToken;
     s.expiresAt = _expiry(map['expires_in']);
     s.uid = map['user_id'] as String? ?? s.uid;
+    _persist();
   }
 
-  void signOut() => session = null;
+  void signOut() {
+    session = null;
+    try {
+      final f = File(_sessionPath);
+      if (f.existsSync()) f.deleteSync();
+    } on Object {
+      // Nothing to clean up.
+    }
+  }
 
   Future<void> _exchangeCustomToken(String customToken) async {
     final res = await _http.send(
@@ -258,8 +276,9 @@ class AtgAuth {
       idToken: idToken,
       refreshToken: refreshToken,
       expiresAt: _expiry(map['expiresIn']),
-      uid: map['localId'] as String?,
+      uid: map['localId'] as String? ?? _jwtSubject(idToken),
     );
+    _persist();
   }
 
   /// Deep-searches the login response for one of [AtgConfig.customTokenKeys]
@@ -285,6 +304,63 @@ class AtgAuth {
 
     walk(json);
     return found;
+  }
+
+  void _restore() {
+    try {
+      final f = File(_sessionPath);
+      if (!f.existsSync()) return;
+      final map = jsonDecode(f.readAsStringSync());
+      if (map is! Map) return;
+      final refreshToken = map['refreshToken'] as String?;
+      if (refreshToken == null || refreshToken.isEmpty) return;
+      session = AtgSession(
+        idToken: map['idToken'] as String? ?? '',
+        refreshToken: refreshToken,
+        // Force a refresh on first use; the stored ID token has expired.
+        expiresAt: DateTime.fromMillisecondsSinceEpoch(0),
+        uid: map['uid'] as String?,
+      );
+    } on Object catch (e) {
+      debugPrint('[ATG] could not restore session: $e');
+    }
+  }
+
+  void _persist() {
+    final s = session;
+    if (s == null) return;
+    try {
+      File(_sessionPath).writeAsStringSync(
+        jsonEncode({
+          'idToken': s.idToken,
+          'refreshToken': s.refreshToken,
+          'expiresAt': s.expiresAt.millisecondsSinceEpoch,
+          'uid': s.uid,
+        }),
+      );
+    } on Object catch (e) {
+      debugPrint('[ATG] could not persist session: $e');
+    }
+  }
+
+  /// Firebase's REST response does not always carry `localId`, so read the
+  /// subject from the ID token itself. This is not a verification step: the
+  /// token just came from Firebase over TLS and is only used as our own uid.
+  static String? _jwtSubject(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length < 2) return null;
+      final payload = utf8.decode(
+        base64Url.decode(base64Url.normalize(parts[1])),
+      );
+      final json = jsonDecode(payload);
+      if (json is Map) {
+        return (json['user_id'] ?? json['sub']) as String?;
+      }
+    } on Object {
+      // Fall through to null.
+    }
+    return null;
   }
 
   static Map<String, dynamic> _asMap(dynamic json) {

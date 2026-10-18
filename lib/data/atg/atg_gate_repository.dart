@@ -38,14 +38,25 @@ class AtgGateRepository implements GateRepository {
     return {AtgConfig.authHeader: _auth.session!.idToken};
   }
 
-  Future<dynamic> _get(String path, {String context = ''}) async {
+  Future<dynamic> _get(
+    String path, {
+    Map<String, String>? query,
+    String context = '',
+  }) async {
+    var url = Uri.parse('${AtgConfig.apiBase}$path');
+    if (query != null && query.isNotEmpty) {
+      url = url.replace(queryParameters: query);
+    }
     return _http.send(
       'GET',
-      Uri.parse('${AtgConfig.apiBase}$path'),
+      url,
       headers: await _authHeaders(),
       context: context.isEmpty ? path : context,
     );
   }
+
+  /// The resident's uid: the profile id once known, else the Firebase subject.
+  String? get _uid => _resident?.id ?? _auth.session?.uid;
 
   Future<dynamic> _post(String path, Object body, {String context = ''}) async {
     return _http.send(
@@ -71,7 +82,11 @@ class AtgGateRepository implements GateRepository {
     // enter with what the Firebase session already tells us.
     Resident who;
     try {
-      final profile = await _get(AtgConfig.profileFullPath, context: 'profile');
+      final profile = await _get(
+        AtgConfig.profileFullPath,
+        query: {'uid': ?_auth.session?.uid},
+        context: 'profile',
+      );
       who = _mapResident(profile, fallbackPhone: phone);
     } on Object catch (e) {
       debugPrint('[ATG] profile unavailable after sign-in: $e');
@@ -92,7 +107,11 @@ class AtgGateRepository implements GateRepository {
     // fall back to a single site so the app can proceed (the invite endpoints
     // appear to be scoped by the token, not a site id).
     try {
-      final profile = await _get(AtgConfig.profileFullPath, context: 'profile');
+      final profile = await _get(
+        AtgConfig.profileFullPath,
+        query: {'uid': ?_uid},
+        context: 'profile',
+      );
       final sites = _mapSites(profile);
       if (sites.isNotEmpty) return sites;
     } on Object catch (e) {
@@ -112,7 +131,11 @@ class AtgGateRepository implements GateRepository {
 
   @override
   Future<List<Invite>> fetchInvites(String siteId) async {
-    final res = await _get(AtgConfig.invitesListPath, context: 'invites');
+    final res = await _get(
+      AtgConfig.invitesListPath,
+      query: {'uid': ?_uid, 'limit': '50'},
+      context: 'invites',
+    );
     if (!_loggedInviteShape && AtgConfig.debugLog) {
       _loggedInviteShape = true;
       debugPrint(

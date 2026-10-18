@@ -1,5 +1,6 @@
 // The app root is a WidgetsApp, the unstyled foundation: Gatepass's own
 // tokens, type and routes, with no MaterialApp or ThemeData underneath.
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -12,13 +13,31 @@ import 'features/visitors/visitors_screen.dart';
 import 'state/app_state.dart';
 import 'ui/ui.dart';
 
-class GatepassApp extends StatelessWidget {
+class GatepassApp extends StatefulWidget {
   const GatepassApp({super.key, required this.state});
 
   final AppState state;
 
   @override
+  State<GatepassApp> createState() => _GatepassAppState();
+}
+
+class _GatepassAppState extends State<GatepassApp> {
+  /// Dev aid: after a hot reload, refetch so live API shapes can be checked
+  /// without signing in again. Never runs in release.
+  @override
+  void reassemble() {
+    super.reassemble();
+    if (kDebugMode && widget.state.signedIn) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.state.refresh();
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final state = widget.state;
     return AppScope(
       state: state,
       child: ListenableBuilder(

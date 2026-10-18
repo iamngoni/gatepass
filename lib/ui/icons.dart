@@ -24,6 +24,7 @@ abstract final class GpIcons {
   static const chevronLeft = LucideIcons.chevronLeft;
   static const chevronRight = LucideIcons.chevronRight;
   static const chevronsUpDown = LucideIcons.chevronsUpDown;
+  static const refresh = LucideIcons.refreshCw;
 
   // Header.
   static const pass = LucideIcons.qrCode;
