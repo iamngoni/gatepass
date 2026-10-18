@@ -138,7 +138,21 @@ class AppState extends ChangeNotifier {
   Future<void> requestCode(String phone) => _repo.requestCode(phone);
 
   Future<void> signIn(String phone, String code) async {
-    final who = await _repo.signIn(phone: phone, code: code);
+    await _enter(await _repo.signIn(phone: phone, code: code));
+  }
+
+  /// Uses the stored Firebase refresh token on launch. A network failure keeps
+  /// the token for the next attempt and leaves the sign-in screen available.
+  Future<void> restoreSession() async {
+    try {
+      final who = await _repo.restoreSession();
+      if (who != null) await _enter(who);
+    } on Object catch (e) {
+      debugPrint('[Gatepass] session restore failed: $e');
+    }
+  }
+
+  Future<void> _enter(Resident who) async {
     sites = await _repo.fetchSites();
     _site = sites.first;
     resident = who;

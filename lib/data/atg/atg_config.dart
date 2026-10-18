@@ -50,9 +50,13 @@ class AtgConfig {
   // --- Endpoint paths (HIGH confidence they exist; methods INFERRED). ---
   static const loginStartPath = '/open/login/start'; // POST: send OTP
   static const loginCheckPath = '/open/login/check'; // POST: verify OTP
-  static const profileFullPath = '/api/profile/full'; // GET: resident + sites
+  static const sharedAccessPath =
+      '/api/sharedAccess/v11/getList'; // POST: estates/accounts for this login
+  static const userSettingsPath =
+      '/api/user/v2/settings'; // GET: estate metadata for a hostUid
+  static const profileFullPath = '/api/profile/full'; // GET: profile editor
   static const invitesListPath =
-      '/api/visitor/v3/profiles'; // GET: list invites
+      '/api/visitor/v3/profiles'; // GET: list visitor profiles
   static const visitorDetailPath = '/api/v5/visitor/profile'; // GET: one invite
   static const createVisitorPath = '/api/visitor'; // POST: create invite
   static const shareVisitorPath = '/api/visitor/v4/share'; // POST: send invite

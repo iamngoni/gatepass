@@ -233,12 +233,14 @@ class AtgSession {
     required this.refreshToken,
     required this.expiresAt,
     this.uid,
+    this.phone,
   });
 
   String idToken;
   String refreshToken;
   DateTime expiresAt;
   String? uid;
+  String? phone;
 
   bool get isExpired =>
       DateTime.now().isAfter(expiresAt.subtract(const Duration(seconds: 30)));
@@ -318,6 +320,8 @@ class AtgAuth {
       );
     }
     await _exchangeCustomToken(customToken);
+    session?.phone = phoneE164;
+    _persist();
   }
 
   /// Renews [session] with the refresh token. Called automatically before an
@@ -414,6 +418,7 @@ class AtgAuth {
         // Force a refresh on first use; the stored ID token has expired.
         expiresAt: DateTime.fromMillisecondsSinceEpoch(0),
         uid: map['uid'] as String?,
+        phone: map['phone'] as String?,
       );
     } on Object catch (e) {
       debugPrint('[ATG] could not restore session: $e');
@@ -430,6 +435,7 @@ class AtgAuth {
           'refreshToken': s.refreshToken,
           'expiresAt': s.expiresAt.millisecondsSinceEpoch,
           'uid': s.uid,
+          'phone': s.phone,
         }),
       );
     } on Object catch (e) {

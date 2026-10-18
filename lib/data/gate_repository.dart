@@ -8,6 +8,10 @@ abstract interface class GateRepository {
   Future<void> requestCode(String phone);
   Future<Resident> signIn({required String phone, required String code});
 
+  /// Resumes a previously stored session, returning the resident when the
+  /// persisted refresh token is still valid. Null means sign-in is required.
+  Future<Resident?> restoreSession();
+
   Future<List<Site>> fetchSites();
   Future<AccessPass> fetchPass(String siteId);
 

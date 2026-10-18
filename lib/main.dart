@@ -8,5 +8,7 @@ void main() {
   // Live only: the app talks to the real At The Gate backend with the signed-in
   // resident's own account. See lib/data/atg/ for configuration and the
   // verify-first notes (writes are dry-run until shapes are confirmed).
-  runApp(GatepassApp(state: AppState(AtgGateRepository())));
+  final state = AppState(AtgGateRepository());
+  runApp(GatepassApp(state: state));
+  state.restoreSession();
 }

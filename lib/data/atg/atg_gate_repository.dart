@@ -27,6 +27,11 @@ class AtgGateRepository implements GateRepository {
   late final AtgAuth _auth;
 
   Resident? _resident;
+  String? _accountUid;
+  String? _accountName;
+  String? _accountEmail;
+  String? _accountUnit;
+  String? _estateName;
   bool _loggedInviteShape = false;
 
   // --- auth / transport ---
@@ -55,8 +60,12 @@ class AtgGateRepository implements GateRepository {
     );
   }
 
-  /// The resident's uid: the profile id once known, else the Firebase subject.
-  String? get _uid => _resident?.id ?? _auth.session?.uid;
+  /// The estate account uid used by visitor/entry endpoints. It is distinct
+  /// from the Firebase login uid: `/api/user/v2/settings` returns it as
+  /// `accessPermissions.hostUid`.
+  String? get _uid => _accountUid ?? _resident?.id ?? _auth.session?.uid;
+
+  String? get _firebaseUid => _auth.session?.uid;
 
   Future<dynamic> _post(String path, Object body, {String context = ''}) async {
     return _http.send(
@@ -75,21 +84,43 @@ class AtgGateRepository implements GateRepository {
       _auth.startLogin(_normalizeMobile(phone));
 
   @override
+  Future<Resident?> restoreSession() async {
+    if (!_auth.isSignedIn) return null;
+    try {
+      // Restored sessions deliberately start expired, so this both proves the
+      // stored refresh token still works and recovers the Firebase uid.
+      await _auth.refresh();
+    } on Object catch (e) {
+      debugPrint('[ATG] stored session could not be refreshed: $e');
+      return null;
+    }
+
+    final phone = _auth.session?.phone ?? '';
+    _resident = Resident(
+      id: _auth.session?.uid ?? 'me',
+      name: 'Resident',
+      phone: phone,
+      email: '',
+    );
+    try {
+      _resident = await _loadAccount();
+    } on Object catch (e) {
+      debugPrint('[ATG] account settings unavailable after restore: $e');
+    }
+    return _resident;
+  }
+
+  @override
   Future<Resident> signIn({required String phone, required String code}) async {
     await _auth.verifyAndExchange(_normalizeMobile(phone), code);
-    // Pull the resident's profile so the app has a name/email and sites. A
-    // failed profile read must not undo a successful OTP sign-in: log it and
-    // enter with what the Firebase session already tells us.
+    // The Firebase uid authenticates the token. The estate account uid used by
+    // visitor endpoints is a different value returned by the account settings
+    // endpoint, so load that before entering the app.
     Resident who;
     try {
-      final profile = await _get(
-        AtgConfig.profileFullPath,
-        query: {'uid': ?_auth.session?.uid},
-        context: 'profile',
-      );
-      who = _mapResident(profile, fallbackPhone: phone);
+      who = await _loadAccount();
     } on Object catch (e) {
-      debugPrint('[ATG] profile unavailable after sign-in: $e');
+      debugPrint('[ATG] account settings unavailable after sign-in: $e');
       who = Resident(
         id: _auth.session?.uid ?? 'me',
         name: 'Resident',
@@ -103,28 +134,105 @@ class AtgGateRepository implements GateRepository {
 
   @override
   Future<List<Site>> fetchSites() async {
-    // Sites usually arrive inside the profile; parse them if present, otherwise
-    // fall back to a single site so the app can proceed (the invite endpoints
-    // appear to be scoped by the token, not a site id).
-    try {
-      final profile = await _get(
-        AtgConfig.profileFullPath,
-        query: {'uid': ?_uid},
-        context: 'profile',
-      );
-      final sites = _mapSites(profile);
-      if (sites.isNotEmpty) return sites;
-    } on Object catch (e) {
-      debugPrint('[ATG] sites unavailable from profile: $e');
+    if (_accountUid == null) {
+      try {
+        await _loadAccount();
+      } on Object catch (e) {
+        debugPrint('[ATG] sites unavailable from account settings: $e');
+      }
     }
+    // A resident account is scoped to one estate in this API. The account
+    // settings response carries the estate name and the resident's unit.
     return [
       Site(
-        id: _auth.session?.uid ?? 'atg',
-        name: _resident?.name ?? 'My estate',
-        unit: '',
+        id: _accountUid ?? _auth.session?.uid ?? 'atg',
+        name: _estateName ?? 'My estate',
+        unit: _accountUnit ?? '',
         area: '',
       ),
     ];
+  }
+
+  /// Resolves the estate/account attached to the Firebase login. The login uid
+  /// is not the `hostUid` visitor endpoints use, so this is the necessary
+  /// bridge between authentication and resident data.
+  Future<Resident> _loadAccount() async {
+    final shared = _asMap(
+      await _post(AtgConfig.sharedAccessPath, {
+        'deviceType': AtgConfig.platform,
+        'deviceId': 'gatepass',
+        'appVersion': AtgConfig.appVersion,
+        'appBuildNumber': AtgConfig.appBuildNumber,
+      }, context: 'accounts'),
+    );
+    final accounts = _listOf(shared['sharedAccess']);
+    final account = accounts.whereType<Map>().firstOrNull;
+    if (account == null) {
+      throw AtgException('No estate account is linked to this login.');
+    }
+    final accountMap = account.cast<String, dynamic>();
+    _accountUid =
+        _firstString(accountMap, const ['hostUid', 'accountUid']) ??
+        _accountUid;
+    _estateName =
+        _firstString(accountMap, const ['accountName', 'name']) ?? _estateName;
+    _accountUnit =
+        _firstString(accountMap, const ['invitationsUserUnit', 'unit']) ??
+        _accountUnit;
+    final accountName =
+        _firstString(accountMap, const ['invitationsUserName'])?.trim() ?? '';
+    if (accountName.isNotEmpty) _accountName = accountName;
+    _accountEmail = _firstString(accountMap, const ['email']) ?? _accountEmail;
+
+    // The account settings read adds the estate branding and confirms the
+    // permissions behind this hostUid. If it is unavailable, the shared-access
+    // row above is still enough to enter and load visitor data.
+    try {
+      final settings = _asMap(
+        await _get(
+          AtgConfig.userSettingsPath,
+          query: {'uid': ?_accountUid},
+          context: 'account',
+        ),
+      );
+      final app = _asMapOrEmpty(settings['appSettings']);
+      final access = _asMapOrEmpty(settings['accessPermissions']);
+      _estateName =
+          _firstString(app, const ['brandName', 'name']) ?? _estateName;
+      _accountUnit =
+          _firstString(access, const ['invitationsUserUnit', 'unit']) ??
+          _accountUnit;
+      final first =
+          _firstString(access, const [
+            'invitationsUserName',
+            'firstName',
+          ])?.trim() ??
+          '';
+      final last =
+          _firstString(access, const [
+            'invitationsUserSurname',
+            'lastName',
+          ])?.trim() ??
+          '';
+      final fullName = [first, last].where((part) => part.isNotEmpty).join(' ');
+      if (fullName.isNotEmpty) _accountName = fullName;
+      _accountEmail = _firstString(access, const ['email']) ?? _accountEmail;
+    } on Object catch (e) {
+      debugPrint('[ATG] account settings unavailable: $e');
+    }
+
+    if (AtgConfig.debugLog) {
+      debugPrint(
+        '[ATG] account resolved: hostUid ${_accountUid ?? 'missing'}, '
+        'estate ${_estateName ?? 'missing'}',
+      );
+    }
+    return Resident(
+      id: _accountUid ?? _firebaseUid ?? 'me',
+      name: _accountName ?? 'Resident',
+      phone: _auth.session?.phone ?? '',
+      email: _accountEmail ?? '',
+    );
   }
 
   // --- invites: the verify-first path ---
@@ -233,58 +341,6 @@ class AtgGateRepository implements GateRepository {
   }
 
   // --- mapping helpers (all defensive: ATG's exact keys are inferred) ---
-
-  Resident _mapResident(dynamic json, {required String fallbackPhone}) {
-    final m = _asMapOrEmpty(json);
-    final profile = _asMapOrEmpty(m['profile'] ?? m['user'] ?? m['data']);
-    final src = profile.isNotEmpty ? profile : m;
-    final name =
-        _firstString(src, const [
-          'name',
-          'fullName',
-          'full_name',
-          'displayName',
-        ]) ??
-        [
-          _firstString(src, const ['firstName', 'first_name']),
-          _firstString(src, const ['lastName', 'last_name']),
-        ].whereType<String>().join(' ').trim();
-    return Resident(
-      id:
-          _firstString(src, const ['uid', 'id', 'userId']) ??
-          _auth.session?.uid ??
-          'me',
-      name: name.isEmpty ? 'Resident' : name,
-      phone:
-          _firstString(src, const ['mobile', 'phoneNumber', 'phone']) ??
-          fallbackPhone,
-      email: _firstString(src, const ['email']) ?? '',
-    );
-  }
-
-  List<Site> _mapSites(dynamic json) {
-    final m = _asMapOrEmpty(json);
-    final raw =
-        m['sites'] ??
-        m['estates'] ??
-        m['complexes'] ??
-        _asMapOrEmpty(m['profile'])['sites'];
-    return [
-      for (final s in _listOf(raw))
-        if (s is Map)
-          () {
-            final sm = s.cast<String, dynamic>();
-            return Site(
-              id: _firstString(sm, const ['uid', 'id', 'siteId']) ?? '',
-              name:
-                  _firstString(sm, const ['name', 'siteName', 'estate']) ??
-                  'Estate',
-              unit: _firstString(sm, const ['unit', 'erf', 'address']) ?? '',
-              area: _firstString(sm, const ['area', 'suburb', 'city']) ?? '',
-            );
-          }(),
-    ].where((s) => s.id.isNotEmpty).toList();
-  }
 
   Invite _mapInvite(
     Map<String, dynamic> m,
@@ -442,6 +498,7 @@ class AtgGateRepository implements GateRepository {
         'items',
         'results',
         'profiles',
+        'visitors',
         'list',
       ]) {
         final inner = v[key];
