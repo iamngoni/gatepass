@@ -276,9 +276,9 @@ class AtgGateRepository implements GateRepository {
       'uid': ?_uid,
       AtgConfig.fFirstName: first,
       if (last.isNotEmpty) AtgConfig.fLastName: last,
-      if (draft.phone != null) AtgConfig.fMobile: draft.phone,
-      if (draft.vehicleReg != null) AtgConfig.fLicence: draft.vehicleReg,
-      if (categoryId != null) AtgConfig.fCategoryId: categoryId,
+      AtgConfig.fMobile: ?draft.phone,
+      AtgConfig.fLicence: ?draft.vehicleReg,
+      AtgConfig.fCategoryId: ?categoryId,
       // ATG stores timestamps as epoch milliseconds.
       AtgConfig.fValidFrom: draft.from.toUtc().millisecondsSinceEpoch,
       AtgConfig.fValidTill: draft.until.toUtc().millisecondsSinceEpoch,
