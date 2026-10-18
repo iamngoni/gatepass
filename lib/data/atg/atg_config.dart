@@ -63,7 +63,9 @@ class AtgConfig {
   static const deleteVisitorPath =
       '/api/visitor/profile/delete'; // POST: revoke (soft-delete)
   static const categoriesPath = '/api/visitor/categories'; // GET
+  static const entriesListPath = '/api/entries/v2/getList'; // GET
   static const entriesFilterPath = '/api/entries/filter'; // POST/GET
+  static const notificationsListPath = '/api/notifications/getList'; // GET
   static const notificationAckPath = '/api/notification/acknowledge'; // POST
 
   // --- Login. Recovered verbatim from ATG's own web client

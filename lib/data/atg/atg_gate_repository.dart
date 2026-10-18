@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 
 import '../gate_repository.dart';
@@ -33,6 +36,11 @@ class AtgGateRepository implements GateRepository {
   String? _accountUnit;
   String? _estateName;
   bool _loggedInviteShape = false;
+
+  static final String _notificationReadPath =
+      '${Directory.systemTemp.path}/gatepass_notifications_seen.json';
+  Set<String>? _seenNotificationIds;
+  bool _seededNotificationBaseline = false;
 
   // --- auth / transport ---
 
@@ -322,11 +330,67 @@ class AtgGateRepository implements GateRepository {
   Future<List<EntryEvent>> fetchEntries(String siteId) async => const [];
 
   @override
-  Future<List<AppNotification>> fetchNotifications(String siteId) async =>
-      const [];
+  Future<List<AppNotification>> fetchNotifications(String siteId) async {
+    final res = await _get(
+      AtgConfig.notificationsListPath,
+      context: 'notifications',
+    );
+    final list = _listOf(res);
+    final mapped = [
+      for (final item in list)
+        if (item is Map) _mapNotification(item.cast<String, dynamic>(), siteId),
+    ];
+    final seen = _loadSeenNotifications();
+    final hadBaseline = File(_notificationReadPath).existsSync();
+    if (!hadBaseline && !_seededNotificationBaseline) {
+      // First run sees the existing archive. Treat it as history instead of
+      // showing fifty old notifications as new.
+      seen.addAll(mapped.map((n) => n.id));
+      _saveSeenNotifications();
+      _seededNotificationBaseline = true;
+      return [for (final n in mapped) n.copyWith(read: true)];
+    }
+    return [
+      for (final n in mapped) seen.contains(n.id) ? n.copyWith(read: true) : n,
+    ];
+  }
 
   @override
-  Future<void> markNotificationsRead(Iterable<String> ids) async {}
+  Future<void> markNotificationsRead(Iterable<String> ids) async {
+    _loadSeenNotifications().addAll(ids);
+    _saveSeenNotifications();
+  }
+
+  Set<String> _loadSeenNotifications() {
+    final cached = _seenNotificationIds;
+    if (cached != null) return cached;
+    final seen = <String>{};
+    try {
+      final file = File(_notificationReadPath);
+      if (file.existsSync()) {
+        final decoded = jsonDecode(file.readAsStringSync());
+        if (decoded is List) {
+          seen.addAll(decoded.whereType<String>());
+        }
+      }
+    } on Object catch (e) {
+      debugPrint('[ATG] could not read notification state: $e');
+    }
+    return _seenNotificationIds = seen;
+  }
+
+  void _saveSeenNotifications() {
+    try {
+      final seen = _seenNotificationIds;
+      if (seen == null) return;
+      final ids = seen.toList();
+      // The archive can grow forever; keep the most recent 1,000 ids.
+      final kept = ids.length > 1000 ? ids.sublist(ids.length - 1000) : ids;
+      File(_notificationReadPath).writeAsStringSync(jsonEncode(kept));
+    } on Object catch (e) {
+      debugPrint('[ATG] could not save notification state: $e');
+    }
+  }
 
   // --- write safety ---
 
@@ -341,6 +405,41 @@ class AtgGateRepository implements GateRepository {
   }
 
   // --- mapping helpers (all defensive: ATG's exact keys are inferred) ---
+
+  AppNotification _mapNotification(Map<String, dynamic> m, String siteId) {
+    final title =
+        _firstString(m, const ['title', 'message', 'body']) ?? 'Estate update';
+    final customFields = m['customFields'];
+    final body = customFields is List
+        ? customFields
+              .whereType<String>()
+              .where((s) => s.isNotEmpty)
+              .join(' · ')
+        : (_firstString(m, const ['message', 'body', 'description']) ?? '');
+    final lower = title.toLowerCase();
+    final kind = lower.contains('enter') || lower.contains('arriv')
+        ? NotificationKind.arrival
+        : lower.contains('exit') ||
+              lower.contains('left') ||
+              lower.contains('depart')
+        ? NotificationKind.departure
+        : lower.contains('prescreen') || lower.contains('approv')
+        ? NotificationKind.prescreen
+        : NotificationKind.notice;
+    return AppNotification(
+      id:
+          _firstString(m, const ['id', 'notificationId', 'uid']) ??
+          'atg-${m['dataAdded'] ?? DateTime.now().millisecondsSinceEpoch}',
+      siteId: siteId,
+      kind: kind,
+      title: title,
+      body: body,
+      time:
+          _parseDate(m['dataAdded'] ?? m['dateCreated'] ?? m['createdAt']) ??
+          DateTime.now(),
+      read: _asBool(m['read'] ?? m['isRead']) ?? false,
+    );
+  }
 
   Invite _mapInvite(
     Map<String, dynamic> m,
