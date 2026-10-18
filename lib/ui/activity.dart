@@ -98,7 +98,7 @@ class _ArcPainter extends CustomPainter {
       old.color != color || old.strokeWidth != strokeWidth;
 }
 
-/// A rounded track and fill: the pass's countdown.
+/// A rounded track and fill for a determinate progress value.
 class GpProgressBar extends StatelessWidget {
   const GpProgressBar({super.key, required this.value, this.height = 4});
 

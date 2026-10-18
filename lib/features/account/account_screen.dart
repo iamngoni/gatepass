@@ -12,6 +12,11 @@ class AccountScreen extends StatelessWidget {
     final state = AppScope.of(context);
     final resident = state.resident!;
     final colors = context.colors;
+    final site = state.site;
+    final propertyLine = [
+      site.unit,
+      site.area,
+    ].where((part) => part.trim().isNotEmpty).join(' · ');
 
     Widget padded(Widget child) => Padding(
       padding: const EdgeInsets.symmetric(horizontal: GpSpace.gutter),
@@ -38,9 +43,12 @@ class AccountScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(resident.name, style: context.type.cardTitle),
-                        const SizedBox(height: GpSpace.xxs),
-                        Text(resident.phone, style: context.type.caption),
-                        Text(resident.email, style: context.type.caption),
+                        if (resident.phone.isNotEmpty) ...[
+                          const SizedBox(height: GpSpace.xxs),
+                          Text(resident.phone, style: context.type.caption),
+                        ],
+                        if (resident.email.isNotEmpty)
+                          Text(resident.email, style: context.type.caption),
                       ],
                     ),
                   ),
@@ -48,38 +56,19 @@ class AccountScreen extends StatelessWidget {
               ),
             ),
           ),
-          const SectionHeading('Your properties'),
+          const SectionHeading('Your property'),
           padded(
             GpGroup(
               children: [
-                for (final s in state.sites)
-                  GpRow(
-                    leading: IconBadge(
-                      icon: GpIcons.property,
-                      size: 40,
-                      tone: s.id == state.site.id ? Tone.accent : Tone.neutral,
-                    ),
-                    title: s.name,
-                    subtitle: '${s.unit} · ${s.area}',
-                    trailing: s.id == state.site.id
-                        ? Icon(GpIcons.check, color: colors.accent, size: 20)
-                        : null,
-                    onTap: () => state.selectSite(s),
+                GpRow(
+                  leading: const IconBadge(
+                    icon: GpIcons.property,
+                    size: 40,
+                    tone: Tone.accent,
                   ),
-              ],
-            ),
-          ),
-          const SectionHeading('Notify me when'),
-          padded(
-            GpGroup(
-              inset: GpSpace.lg,
-              children: [
-                for (final pref in NotifyPref.values)
-                  GpSwitchRow(
-                    title: pref.label,
-                    value: state.prefs[pref]!,
-                    onChanged: (v) => state.setPref(pref, v),
-                  ),
+                  title: site.name,
+                  subtitle: propertyLine.isEmpty ? null : propertyLine,
+                ),
               ],
             ),
           ),
@@ -91,28 +80,23 @@ class AccountScreen extends StatelessWidget {
               onChanged: (i) => state.setAppearance(Appearance.values[i]),
             ),
           ),
-          const SectionHeading('Help'),
+          const SectionHeading('About'),
           padded(
             GpGroup(
               inset: 52,
               children: [
                 GpRow(
-                  leading: Icon(GpIcons.security, color: colors.inkMuted),
-                  title: 'Contact estate security',
-                  chevron: true,
-                  onTap: () {},
-                ),
-                GpRow(
                   leading: Icon(GpIcons.info, color: colors.inkMuted),
-                  title: 'About this prototype',
+                  title: 'About Gatepass',
                   chevron: true,
                   onTap: () => showGpInfo(
                     context,
-                    title: 'Gatepass prototype',
+                    title: 'About Gatepass',
                     body:
-                        'A redesign of the resident side of an estate access '
-                        'app. All data is made up; nothing talks to a real '
-                        'gate.',
+                        'Gatepass signs in to your At The Gate account and '
+                        'uses its visitor invitation service. It shows the '
+                        'estate and invitations returned by that account. '
+                        'Gate entry history is not available to this account.',
                   ),
                 ),
               ],

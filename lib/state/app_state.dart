@@ -5,48 +5,31 @@ import '../data/models.dart';
 import '../data/services.dart';
 import '../ui/theme.dart';
 
-enum NotifyPref {
-  arrivals('Visitors arrive'),
-  departures('Visitors leave'),
-  prescreen('Pre-screening is done'),
-  notices('Estate notices');
-
-  const NotifyPref(this.label);
-  final String label;
-}
-
 class AppState extends ChangeNotifier {
   AppState(this._repo);
 
   final GateRepository _repo;
 
   Resident? resident;
-  List<Site> sites = const [];
   Site? _site;
   List<Invite> invites = const [];
-  List<EntryEvent> entries = const [];
   List<AppNotification> notifications = const [];
   Appearance appearance = Appearance.system;
-  final prefs = {for (final p in NotifyPref.values) p: true};
 
   bool get signedIn => resident != null && _site != null;
   Site get site => _site!;
   int get unreadCount => notifications.where((n) => !n.read).length;
 
   List<Invite> get upcoming =>
-      invites.where((i) => i.status.isUpcoming).toList()
-        ..sort((a, b) => a.from.compareTo(b.from));
-
-  List<Invite> get onSite =>
-      invites.where((i) => i.status == InviteStatus.onSite).toList()
+      invites.where((i) => i.status == InviteStatus.active).toList()
         ..sort((a, b) => a.from.compareTo(b.from));
 
   List<Invite> get past =>
       invites.where((i) => i.status.isPast).toList()
         ..sort((a, b) => b.from.compareTo(a.from));
 
-  /// Every invite whose code still works: on site first, then by start.
-  List<Invite> get live => [...onSite, ...upcoming];
+  /// Every invite whose code still works, ordered by start.
+  List<Invite> get live => upcoming;
 
   /// The latest invite for each person (not services), newest first.
   List<Invite> get recentPeople {
@@ -88,8 +71,7 @@ class AppState extends ChangeNotifier {
       )
       .firstOrNull;
 
-  /// Same person, same settings as last time, starting now. Anyone who was
-  /// pre-screened before skips it.
+  /// Same person and settings as last time, starting now.
   InviteDraft reinviteDraft(Invite last) {
     final now = DateTime.now();
     final length = last.until.difference(last.from);
@@ -111,8 +93,6 @@ class AppState extends ChangeNotifier {
       vehicleReg: last.vehicleReg,
       from: now,
       until: until,
-      multiEntry: last.multiEntry,
-      prescreenRequired: last.prescreenRequired && last.prescreenedAt == null,
     );
   }
 
@@ -123,17 +103,10 @@ class AppState extends ChangeNotifier {
       serviceId: service.id,
       from: now,
       until: now.add(service.window),
-      prescreenRequired: false,
     );
   }
 
   Invite? inviteById(String id) => invites.where((i) => i.id == id).firstOrNull;
-
-  EntryEvent? entryById(String id) =>
-      entries.where((e) => e.id == id).firstOrNull;
-
-  List<EntryEvent> entriesForInvite(String inviteId) =>
-      entries.where((e) => e.inviteId == inviteId).toList();
 
   Future<void> requestCode(String phone) => _repo.requestCode(phone);
 
@@ -153,7 +126,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> _enter(Resident who) async {
-    sites = await _repo.fetchSites();
+    final sites = await _repo.fetchSites();
     _site = sites.first;
     resident = who;
     notifyListeners();
@@ -170,36 +143,21 @@ class AppState extends ChangeNotifier {
     resident = null;
     _site = null;
     invites = const [];
-    entries = const [];
     notifications = const [];
     notifyListeners();
-  }
-
-  Future<void> selectSite(Site site) async {
-    if (site.id == _site?.id) return;
-    _site = site;
-    invites = const [];
-    entries = const [];
-    notifications = const [];
-    notifyListeners();
-    await refresh();
   }
 
   Future<void> refresh() async {
     final id = site.id;
-    final (i, e, n) = await (
+    final (i, n) = await (
       _repo.fetchInvites(id),
-      _repo.fetchEntries(id),
       _repo.fetchNotifications(id),
     ).wait;
     if (id != _site?.id) return;
     invites = i;
-    entries = e;
     notifications = n;
     notifyListeners();
   }
-
-  Future<AccessPass> fetchPass() => _repo.fetchPass(site.id);
 
   Future<Invite> createInvite(InviteDraft draft) async {
     final siteId = site.id;
@@ -235,11 +193,6 @@ class AppState extends ChangeNotifier {
 
   void setAppearance(Appearance value) {
     appearance = value;
-    notifyListeners();
-  }
-
-  void setPref(NotifyPref pref, bool on) {
-    prefs[pref] = on;
     notifyListeners();
   }
 }

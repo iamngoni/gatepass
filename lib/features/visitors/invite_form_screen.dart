@@ -52,8 +52,6 @@ class _InviteFormScreenState extends State<InviteFormScreen> {
   late int _start = _nextQuarter();
   _Stay _stay = _Stay.h4;
   bool _byCar = false;
-  bool _multiEntry = false;
-  bool _prescreen = true;
   bool _saving = false;
 
   static int _nextQuarter() {
@@ -84,8 +82,14 @@ class _InviteFormScreenState extends State<InviteFormScreen> {
       _phone.text = d.phone ?? '';
       _reg.text = d.vehicleReg ?? '';
       _byCar = d.vehicleReg != null;
-      _multiEntry = d.multiEntry;
-      _prescreen = d.prescreenRequired;
+      final today = dateOnly(DateTime.now());
+      final todayDate = dateOnly(d.from);
+      _date = todayDate.isBefore(today) ? today : todayDate;
+      _day = isSameDay(_date, today)
+          ? _Day.today
+          : isSameDay(_date, addDays(today, 1))
+          ? _Day.tomorrow
+          : _Day.other;
       // Quick drafts start now (the driver may already be on the way), so
       // keep their start instead of rounding up to the next quarter hour.
       if (isSameDay(d.from, _date)) _start = d.from.hour * 60 + d.from.minute;
@@ -126,11 +130,13 @@ class _InviteFormScreenState extends State<InviteFormScreen> {
           _date = addDays(today, 1);
         });
       case _Day.other:
+        final horizon = AppScope.read(context).site.inviteHorizonDays;
+        final last = addDays(today, horizon);
         final picked = await pickDay(
           context,
-          initial: _date.isBefore(today) ? today : _date,
+          initial: _date.isBefore(today) || _date.isAfter(last) ? today : _date,
           first: today,
-          last: addDays(today, 90),
+          last: last,
         );
         if (picked == null) return;
         setState(() {
@@ -168,8 +174,6 @@ class _InviteFormScreenState extends State<InviteFormScreen> {
           vehicleReg: _byCar ? _reg.text.trim().toUpperCase() : null,
           from: _from,
           until: _until,
-          multiEntry: _multiEntry,
-          prescreenRequired: _prescreen,
         ),
       );
       if (!mounted) return;
@@ -223,7 +227,7 @@ class _InviteFormScreenState extends State<InviteFormScreen> {
             GpField(
               controller: _phone,
               label: 'Mobile number (optional)',
-              helper: 'We’ll text them the invite link.',
+              helper: 'Saved on their visitor profile.',
               keyboardType: TextInputType.phone,
               autofillHints: const [AutofillHints.telephoneNumber],
             ),
@@ -336,22 +340,6 @@ class _InviteFormScreenState extends State<InviteFormScreen> {
                         textCapitalization: TextCapitalization.characters,
                       ),
                     ),
-                  const GpSeparator(inset: GpSpace.lg),
-                  GpSwitchRow(
-                    title: 'Allow more than one entry',
-                    subtitle: 'For contractors, carers and regular visitors',
-                    value: _multiEntry,
-                    onChanged: (v) => setState(() => _multiEntry = v),
-                  ),
-                  const GpSeparator(inset: GpSpace.lg),
-                  GpSwitchRow(
-                    title: 'Ask them to pre-screen',
-                    subtitle:
-                        'They add their ID and photo before arriving, so the '
-                        'gate is quicker',
-                    value: _prescreen,
-                    onChanged: (v) => setState(() => _prescreen = v),
-                  ),
                 ],
               ),
             ),
@@ -374,7 +362,7 @@ class _Label extends StatelessWidget {
   );
 }
 
-/// Shown right after creating an invite: the next job is sending it.
+/// Shown right after creating an invite: the next job is sharing it.
 class InviteCreatedScreen extends StatelessWidget {
   const InviteCreatedScreen({super.key, required this.invite});
 
@@ -392,8 +380,8 @@ class InviteCreatedScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             GpButton(
-              label: 'Send to $first',
-              icon: GpIcons.share,
+              label: 'Copy invite message',
+              icon: GpIcons.copy,
               size: GpButtonSize.large,
               onPressed: () => shareInvite(context, invite, site.name),
             ),
@@ -425,10 +413,8 @@ class InviteCreatedScreen extends StatelessWidget {
           ),
           const SizedBox(height: GpSpace.sm),
           Text(
-            invite.prescreenRequired
-                ? 'Send $first the link. They’ll pre-screen first, then use it '
-                      'at the gate.'
-                : 'Send $first the link. They’ll use it at the gate.',
+            'Copy the message and send it to $first yourself. '
+            'The link and gate code are ready to use.',
             textAlign: TextAlign.center,
             style: context.type.body.copyWith(color: colors.inkMuted),
           ),
@@ -439,7 +425,7 @@ class InviteCreatedScreen extends StatelessWidget {
               DetailRow(
                 icon: GpIcons.clock,
                 label: 'Valid',
-                value: windowLabel(invite.from, invite.until),
+                value: inviteValidityLabel(invite),
               ),
               DetailRow(
                 icon: GpIcons.keypad,

@@ -5,8 +5,6 @@ import '../../state/app_state.dart';
 import '../../ui/ui.dart';
 import '../../util/format.dart';
 import '../../widgets/common.dart';
-import '../activity/entry_detail_screen.dart';
-import '../visitors/invite_detail_screen.dart';
 
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
@@ -81,21 +79,11 @@ class _NotificationTile extends StatelessWidget {
     final (icon, tone) = switch (n.kind) {
       NotificationKind.arrival => (GpIcons.arrivals, Tone.accent),
       NotificationKind.departure => (GpIcons.departures, Tone.neutral),
-      NotificationKind.prescreen => (GpIcons.verified, Tone.info),
       NotificationKind.notice => (GpIcons.notice, Tone.warning),
     };
 
     return Pressable(
-      onTap: () {
-        final state = AppScope.read(context);
-        if (!n.read) state.markRead(n.id);
-        final Widget? target = n.entryId != null
-            ? EntryDetailScreen(entryId: n.entryId!)
-            : n.inviteId != null
-            ? InviteDetailScreen(inviteId: n.inviteId!)
-            : null;
-        if (target != null) pushPage<void>(context, (_) => target);
-      },
+      onTap: n.read ? null : () => AppScope.read(context).markRead(n.id),
       child: ColoredBox(
         color: colors.surface,
         child: Padding(

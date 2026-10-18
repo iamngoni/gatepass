@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'features/account/account_screen.dart';
-import 'features/activity/activity_screen.dart';
 import 'features/auth/sign_in_screen.dart';
 import 'features/home/home_screen.dart';
 import 'features/visitors/invite_form_screen.dart';
@@ -100,7 +99,6 @@ class _HomeShellState extends State<HomeShell> {
   static const _tabs = [
     GpTab(GpIcons.home, 'Home'),
     GpTab(GpIcons.visitors, 'Visitors'),
-    GpTab(GpIcons.activity, 'Activity'),
     GpTab(GpIcons.account, 'Account'),
   ];
 
@@ -122,7 +120,6 @@ class _HomeShellState extends State<HomeShell> {
             children: [
               HomeScreen(onOpenTab: _go),
               const VisitorsScreen(),
-              const ActivityScreen(),
               const AccountScreen(),
             ],
           ),

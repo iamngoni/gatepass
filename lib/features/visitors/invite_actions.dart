@@ -21,11 +21,7 @@ String describeError(Object e) {
 }
 
 /// One tap: create the invite straight away and show its code.
-Future<void> quickInvite(
-  BuildContext context,
-  InviteDraft draft, {
-  String? note,
-}) {
+Future<void> quickInvite(BuildContext context, InviteDraft draft) {
   HapticFeedback.lightImpact();
   final invite = AppScope.read(context).createInvite(draft);
   // The sheet attaches its own error handler, but it may not be mounted before
@@ -35,7 +31,7 @@ Future<void> quickInvite(
   invite.ignore();
   return showGpSheet<void>(
     context,
-    builder: (_) => QuickInviteSheet(draft: draft, invite: invite, note: note),
+    builder: (_) => QuickInviteSheet(draft: draft, invite: invite),
   );
 }
 
@@ -44,12 +40,10 @@ class QuickInviteSheet extends StatefulWidget {
     super.key,
     required this.draft,
     required this.invite,
-    this.note,
   });
 
   final InviteDraft draft;
   final Future<Invite> invite;
-  final String? note;
 
   @override
   State<QuickInviteSheet> createState() => _QuickInviteSheetState();
@@ -136,11 +130,7 @@ class _QuickInviteSheetState extends State<QuickInviteSheet> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (service != null)
-            IconBadge(
-              icon: service.kind.icon,
-              tone: service.kind.tone,
-              size: 64,
-            )
+            ServiceIcon(service: service, size: 64)
           else
             InitialsAvatar(name: d.visitorName, size: 64, tone: Tone.accent),
           const SizedBox(height: GpSpace.lg),
@@ -155,14 +145,10 @@ class _QuickInviteSheetState extends State<QuickInviteSheet> {
           ),
           const SizedBox(height: GpSpace.xs),
           Text(
-            'Until $until · ${d.multiEntry ? 'any number of entries' : 'one entry'}',
+            'Until $until',
             style: type.body.copyWith(color: colors.inkMuted),
             textAlign: TextAlign.center,
           ),
-          if (widget.note != null) ...[
-            const SizedBox(height: GpSpace.sm),
-            StatusPill(label: widget.note!, tone: Tone.accent),
-          ],
           const SizedBox(height: GpSpace.xl),
           Container(
             width: double.infinity,
@@ -197,7 +183,7 @@ class _QuickInviteSheetState extends State<QuickInviteSheet> {
                 ? (service != null ? 'Copied' : 'Invite copied')
                 : service != null
                 ? 'Copy code'
-                : 'Send to $first',
+                : 'Copy invite message',
             icon: _copied
                 ? GpIcons.check
                 : service != null
@@ -240,10 +226,7 @@ Future<bool> confirmRevoke(BuildContext context, Invite invite) async {
     title: invite.isService
         ? 'Revoke the ${invite.visitorName} code?'
         : 'Revoke ${invite.firstName}’s invite?',
-    body: invite.status == InviteStatus.onSite && !invite.isService
-        ? '${invite.firstName} is on site now. Their code stops working '
-              'straight away.'
-        : 'The link and gate code stop working straight away.',
+    body: 'The link and gate code stop working straight away.',
     confirmLabel: 'Revoke',
     cancelLabel: 'Keep it',
     danger: true,
@@ -267,7 +250,7 @@ Future<void> copyGateCode(Invite invite, String siteName) => Clipboard.setData(
   ),
 );
 
-/// The prototype copies the message; the real app hands it to the share sheet.
+/// Copies a ready-to-send message; the app does not send SMS itself.
 Future<void> shareInvite(
   BuildContext context,
   Invite invite,

@@ -1,13 +1,11 @@
 import 'package:flutter/widgets.dart';
 
 import '../data/models.dart';
-import '../features/activity/entry_detail_screen.dart';
 import '../features/visitors/invite_actions.dart';
 import '../features/visitors/invite_detail_screen.dart';
 import '../ui/ui.dart';
 import '../util/format.dart';
 import 'common.dart';
-import 'gate_camera.dart';
 
 class InviteTile extends StatelessWidget {
   const InviteTile({super.key, required this.invite, this.revocable = false});
@@ -52,7 +50,6 @@ class InviteTile extends StatelessWidget {
 
   Widget _content(BuildContext context) {
     final colors = context.colors;
-    final onSite = invite.status == InviteStatus.onSite;
     return Pressable(
       onTap: () => pushPage<void>(
         context,
@@ -76,11 +73,7 @@ class InviteTile extends StatelessWidget {
                     Text(invite.visitorName, style: context.type.heading),
                     const SizedBox(height: GpSpace.xxs),
                     Text(
-                      onSite && invite.arrivedAt != null
-                          ? invite.openEnded
-                                ? 'Arrived ${formatTime(invite.arrivedAt!)}'
-                                : 'Arrived ${formatTime(invite.arrivedAt!)} · until ${formatTime(invite.until)}'
-                          : inviteValidityLabel(invite),
+                      inviteValidityLabel(invite),
                       style: context.type.caption,
                     ),
                     if (invite.vehicleReg != null) ...[
@@ -104,74 +97,6 @@ class InviteTile extends StatelessWidget {
               ),
               const SizedBox(width: GpSpace.sm),
               StatusPill(label: invite.status.label, tone: invite.status.tone),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class EntryTile extends StatelessWidget {
-  const EntryTile({super.key, required this.entry, this.showDay = false});
-
-  final EntryEvent entry;
-  final bool showDay;
-
-  @override
-  Widget build(BuildContext context) {
-    final leading = entry.hasPhoto
-        ? ClipRRect(
-            borderRadius: BorderRadius.circular(GpRadius.sm),
-            child: SizedBox.square(
-              dimension: GpSizes.avatar,
-              child: GateCameraSnapshot(
-                seed: entry.id,
-                gateName: entry.gateName,
-                time: entry.time,
-                withVehicle: entry.vehicleReg != null,
-                showOverlay: false,
-              ),
-            ),
-          )
-        : IconBadge(
-            icon: entry.isInbound ? GpIcons.arrivals : GpIcons.departures,
-            tone: entry.isInbound ? Tone.accent : Tone.neutral,
-          );
-
-    return Pressable(
-      onTap: () =>
-          pushPage<void>(context, (_) => EntryDetailScreen(entryId: entry.id)),
-      child: ColoredBox(
-        color: context.colors.surface,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: GpSpace.lg,
-            vertical: GpSpace.md,
-          ),
-          child: Row(
-            children: [
-              leading,
-              const SizedBox(width: GpSpace.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(entry.headline, style: context.type.heading),
-                    const SizedBox(height: GpSpace.xxs),
-                    Text(
-                      '${entry.gateName} · ${entry.method.label}',
-                      style: context.type.caption,
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                showDay
-                    ? '${dayLabel(entry.time)}, ${formatTime(entry.time)}'
-                    : formatTime(entry.time),
-                style: context.type.time,
-              ),
             ],
           ),
         ),

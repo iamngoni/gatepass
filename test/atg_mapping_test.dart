@@ -47,6 +47,7 @@ const _liveInvite = {
   'code': 'ATGM2UAZALP0',
   'categoryId': 5219924235255808,
   'visitsAllowed': 1,
+  'carLic': 'TEST 123 GP',
   'changeOrVisitDate': 1792339708895,
   'type': 'profile',
   'dateCreated': 1792339708895,
@@ -114,10 +115,11 @@ void main() {
       expect(invite.id, '5489823974817792');
       expect(invite.id, isNot('NpLFMcSEWSZO2Yyd8yrndww0ael1'));
       expect(invite.visitorName, 'Uber eats');
+      expect(invite.serviceId, 'uber-eats');
       expect(invite.code, 'ATGM2UAZALP0');
       expect(invite.link, contains('new.atthegate.biz'));
-      expect(invite.multiEntry, isFalse);
-      expect(invite.status, InviteStatus.ready);
+      expect(invite.vehicleReg, 'TEST 123 GP');
+      expect(invite.status, InviteStatus.active);
     },
   );
 
@@ -169,6 +171,52 @@ void main() {
     expect(
       (await repo.fetchInvites('site')).single.status,
       InviteStatus.revoked,
+    );
+  });
+
+  test('estate invitation horizon is read from account settings', () async {
+    final repo = AtgGateRepository(
+      http: _FakeHttp({
+        '/api/sharedAccess/v11/getList': () => {
+          'sharedAccess': [
+            {
+              'hostUid': 'host',
+              'accountName': 'Waterfall Crest',
+              'invitationsUserName': 'Resident',
+              'invitationsUserUnit': '2810',
+            },
+          ],
+        },
+        '/api/user/v2/settings': () => {
+          'appSettings': {'brandName': 'Waterfall Crest'},
+          'accessPermissions': {
+            'invitationsUserUnit': '2810',
+            'invitationsUserName': 'Resident',
+          },
+          'userSettings': {'invitationMaxDaysFromToday': 30},
+        },
+      }),
+    );
+
+    final site = (await repo.fetchSites()).single;
+    expect(site.name, 'Waterfall Crest');
+    expect(site.inviteHorizonDays, 30);
+  });
+
+  test('an invitation past its validTill maps to expired', () async {
+    final repo = AtgGateRepository(
+      http: _FakeHttp({
+        '/api/visitor/v3/profiles': () => {
+          'visitors': [
+            {..._liveInvite, 'validFrom': 1000, 'validTill': 2000},
+          ],
+        },
+      }),
+    );
+
+    expect(
+      (await repo.fetchInvites('site')).single.status,
+      InviteStatus.expired,
     );
   });
 

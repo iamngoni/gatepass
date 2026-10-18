@@ -7,7 +7,6 @@ import '../../util/format.dart';
 import '../../widgets/common.dart';
 import '../../widgets/tiles.dart';
 import '../notifications/notifications_screen.dart';
-import '../pass/pass_screen.dart';
 import '../visitors/invite_actions.dart';
 import '../visitors/invite_detail_screen.dart';
 import '../visitors/invite_form_screen.dart';
@@ -24,7 +23,6 @@ class HomeScreen extends StatelessWidget {
     final state = AppScope.of(context);
     final colors = context.colors;
     final live = state.live;
-    final recent = state.entries.take(3).toList();
 
     return GpScreen(
       child: ListView(
@@ -39,16 +37,11 @@ class HomeScreen extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Expanded(child: _SiteSwitcher()),
+                const Expanded(child: _EstateHeading()),
                 GpIconButton(
                   icon: GpIcons.refresh,
                   label: 'Refresh',
                   onPressed: () => state.refresh(),
-                ),
-                GpIconButton(
-                  icon: GpIcons.pass,
-                  label: 'My pass',
-                  onPressed: () => openPass(context),
                 ),
                 GpIconButton(
                   icon: GpIcons.bell,
@@ -113,34 +106,11 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ],
-          SectionHeading(
-            'Recent activity',
-            action: 'See all',
-            onAction: () => onOpenTab(2),
-          ),
-          if (recent.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: GpSpace.gutter),
-              child: Text(
-                'Nothing yet.',
-                style: context.type.body.copyWith(color: colors.inkMuted),
-              ),
-            )
-          else
-            TileGroup(
-              children: [
-                for (final e in recent)
-                  EntryTile(entry: e, showDay: !isToday(e.time)),
-              ],
-            ),
         ],
       ),
     );
   }
 }
-
-void openPass(BuildContext context) =>
-    pushPage<void>(context, (_) => const PassScreen(), fullscreenDialog: true);
 
 /// Delivery services and people from past invites, on the forest brand
 /// surface. Tap creates a code straight away; hold opens the full form,
@@ -198,7 +168,7 @@ class _QuickInvitePanel extends StatelessWidget {
                   onTap: () => quickInvite(context, state.serviceDraft(s)),
                   onLongPress: () =>
                       openInviteForm(context, initial: state.serviceDraft(s)),
-                  child: Icon(s.kind.icon, color: GpColors.onBrand, size: 22),
+                  child: ServiceIcon(service: s, size: 54),
                 ),
             ],
           ),
@@ -239,13 +209,7 @@ class _QuickInvitePanel extends StatelessWidget {
               context,
               (_) => InviteDetailScreen(inviteId: live.id),
             )
-          : () => quickInvite(
-              context,
-              state.reinviteDraft(last),
-              note: last.prescreenedAt != null
-                  ? 'Verified before · no pre-screen'
-                  : null,
-            ),
+          : () => quickInvite(context, state.reinviteDraft(last)),
       onLongPress: () =>
           openInviteForm(context, initial: state.reinviteDraft(last)),
       child: Text(
@@ -362,96 +326,33 @@ class _QuickTile extends StatelessWidget {
   }
 }
 
-class _SiteSwitcher extends StatelessWidget {
-  const _SiteSwitcher();
+class _EstateHeading extends StatelessWidget {
+  const _EstateHeading();
 
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
-    final colors = context.colors;
-    final canSwitch = state.sites.length > 1;
+    final detail = [
+      state.site.unit,
+      state.site.area,
+    ].where((part) => part.trim().isNotEmpty).join(' · ');
 
-    return Align(
-      alignment: AlignmentDirectional.centerStart,
-      child: Pressable(
-        onTap: canSwitch ? () => showSitePicker(context) : null,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: GpSpace.sm,
-            vertical: GpSpace.xs,
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: GpSpace.sm,
+        vertical: GpSpace.xs,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            state.site.name,
+            style: context.type.section,
+            overflow: TextOverflow.ellipsis,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Flexible(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      state.site.name,
-                      style: context.type.section,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(state.site.area, style: context.type.caption),
-                  ],
-                ),
-              ),
-              if (canSwitch) ...[
-                const SizedBox(width: GpSpace.xs),
-                Icon(GpIcons.chevronsUpDown, size: 18, color: colors.inkMuted),
-              ],
-            ],
-          ),
-        ),
+          if (detail.isNotEmpty) Text(detail, style: context.type.caption),
+        ],
       ),
     );
   }
-}
-
-Future<void> showSitePicker(BuildContext context) {
-  final state = AppScope.read(context);
-  return showGpSheet<void>(
-    context,
-    builder: (sheet) => Padding(
-      padding: const EdgeInsets.fromLTRB(
-        GpSpace.gutter,
-        GpSpace.sm,
-        GpSpace.gutter,
-        GpSpace.lg,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Your properties', style: sheet.type.title),
-          const SizedBox(height: GpSpace.lg),
-          GpGroup(
-            children: [
-              for (final s in state.sites)
-                GpRow(
-                  leading: IconBadge(
-                    icon: GpIcons.property,
-                    tone: s.id == state.site.id ? Tone.accent : Tone.neutral,
-                    size: 40,
-                  ),
-                  title: s.name,
-                  subtitle: '${s.unit} · ${s.area}',
-                  trailing: s.id == state.site.id
-                      ? Icon(
-                          GpIcons.check,
-                          color: sheet.colors.accent,
-                          size: 20,
-                        )
-                      : null,
-                  onTap: () {
-                    Navigator.of(sheet).pop();
-                    state.selectSite(s);
-                  },
-                ),
-            ],
-          ),
-        ],
-      ),
-    ),
-  );
 }

@@ -13,15 +13,12 @@ abstract interface class GateRepository {
   Future<Resident?> restoreSession();
 
   Future<List<Site>> fetchSites();
-  Future<AccessPass> fetchPass(String siteId);
 
   Future<List<Invite>> fetchInvites(String siteId);
   Future<Invite> createInvite(String siteId, InviteDraft draft);
 
   /// Stops a live invite's link and code working straight away.
   Future<Invite> revokeInvite(String inviteId);
-
-  Future<List<EntryEvent>> fetchEntries(String siteId);
 
   Future<List<AppNotification>> fetchNotifications(String siteId);
   Future<void> markNotificationsRead(Iterable<String> ids);

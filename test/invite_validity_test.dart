@@ -15,7 +15,7 @@ Invite _invite({
     visitorName: 'Visitor',
     from: start,
     until: until ?? start.add(const Duration(hours: 8)),
-    status: InviteStatus.ready,
+    status: InviteStatus.active,
     code: '1234',
     link: 'https://example.test/invite',
     createdAt: start,

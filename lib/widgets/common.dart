@@ -142,37 +142,42 @@ class DetailRow extends StatelessWidget {
 
 extension InviteStatusUi on InviteStatus {
   String get label => switch (this) {
-    InviteStatus.awaitingPrescreen => 'Awaiting ID',
-    InviteStatus.ready => 'Ready',
-    InviteStatus.onSite => 'On site',
-    InviteStatus.completed => 'Left',
+    InviteStatus.active => 'Active',
     InviteStatus.expired => 'Expired',
     InviteStatus.revoked => 'Revoked',
   };
 
   Tone get tone => switch (this) {
-    InviteStatus.awaitingPrescreen => Tone.warning,
-    InviteStatus.ready => Tone.info,
-    InviteStatus.onSite => Tone.accent,
+    InviteStatus.active => Tone.info,
     InviteStatus.revoked => Tone.danger,
-    InviteStatus.completed || InviteStatus.expired => Tone.neutral,
+    InviteStatus.expired => Tone.neutral,
   };
 }
 
-extension ServiceKindUi on ServiceKind {
-  IconData get icon => switch (this) {
-    ServiceKind.ride => GpIcons.ride,
-    ServiceKind.food => GpIcons.food,
-    ServiceKind.groceries => GpIcons.groceries,
-    ServiceKind.parcel => GpIcons.parcel,
-  };
+/// The real app icon for a delivery or ride service.
+class ServiceIcon extends StatelessWidget {
+  const ServiceIcon({super.key, required this.service, this.size = 48});
 
-  Tone get tone => switch (this) {
-    ServiceKind.ride => Tone.info,
-    ServiceKind.food => Tone.warning,
-    ServiceKind.groceries => Tone.accent,
-    ServiceKind.parcel => Tone.neutral,
-  };
+  final DeliveryService service;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      image: true,
+      label: service.name,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(size * .24),
+        child: Image.asset(
+          service.iconAsset,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          excludeFromSemantics: true,
+        ),
+      ),
+    );
+  }
 }
 
 /// Service mark for delivery and ride invites, initials for people.
@@ -190,16 +195,12 @@ class InviteAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final service = serviceById(invite.serviceId);
     if (service != null) {
-      return IconBadge(
-        icon: service.kind.icon,
-        tone: service.kind.tone,
-        size: size,
-      );
+      return ServiceIcon(service: service, size: size);
     }
     return InitialsAvatar(
       name: invite.visitorName,
       size: size,
-      tone: invite.status == InviteStatus.onSite ? Tone.accent : Tone.neutral,
+      tone: invite.status.isLive ? Tone.accent : Tone.neutral,
     );
   }
 }

@@ -24,46 +24,29 @@ class Site {
     required this.name,
     required this.unit,
     required this.area,
+    this.inviteHorizonDays = 30,
   });
 
   final String id;
   final String name;
   final String unit;
   final String area;
-}
 
-/// The resident's own rotating QR pass, plus a keypad fallback code.
-@immutable
-class AccessPass {
-  const AccessPass({
-    required this.payload,
-    required this.code,
-    required this.issuedAt,
-    required this.lifetime,
-  });
-
-  final String payload;
-  final String code;
-  final DateTime issuedAt;
-  final Duration lifetime;
-
-  DateTime get expiresAt => issuedAt.add(lifetime);
+  /// How far ahead this estate accepts a new invitation. Read from ATG's
+  /// `userSettings.invitationMaxDaysFromToday`; 30 is only the UI fallback
+  /// while account settings are unavailable.
+  final int inviteHorizonDays;
 }
 
 enum InviteStatus {
-  awaitingPrescreen,
-  ready,
-  onSite,
-  completed,
+  active,
   expired,
   revoked;
 
-  bool get isUpcoming => this == awaitingPrescreen || this == ready;
-
   /// The code still works, so the invite can be revoked.
-  bool get isLive => isUpcoming || this == onSite;
+  bool get isLive => this == active;
 
-  bool get isPast => this == completed || this == expired || this == revoked;
+  bool get isPast => this == expired || this == revoked;
 }
 
 @immutable
@@ -81,11 +64,6 @@ class Invite {
     this.serviceId,
     this.phone,
     this.vehicleReg,
-    this.multiEntry = false,
-    this.prescreenRequired = true,
-    this.prescreenedAt,
-    this.arrivedAt,
-    this.leftAt,
     this.openEnded = false,
     this.windowText,
   });
@@ -100,15 +78,10 @@ class Invite {
   final String? vehicleReg;
   final DateTime from;
   final DateTime until;
-  final bool multiEntry;
-  final bool prescreenRequired;
   final InviteStatus status;
   final String code;
   final String link;
   final DateTime createdAt;
-  final DateTime? prescreenedAt;
-  final DateTime? arrivedAt;
-  final DateTime? leftAt;
 
   /// True when ATG gave this profile no `validFrom`/`validTill` window. Such
   /// an invite is valid until it is used up or revoked; it is not a same-day
@@ -132,15 +105,10 @@ class Invite {
     vehicleReg: vehicleReg,
     from: from,
     until: until,
-    multiEntry: multiEntry,
-    prescreenRequired: prescreenRequired,
     status: status ?? this.status,
     code: code,
     link: link,
     createdAt: createdAt,
-    prescreenedAt: prescreenedAt,
-    arrivedAt: arrivedAt,
-    leftAt: leftAt,
     openEnded: openEnded,
     windowText: windowText,
   );
@@ -155,8 +123,6 @@ class InviteDraft {
     this.serviceId,
     this.phone,
     this.vehicleReg,
-    this.multiEntry = false,
-    this.prescreenRequired = true,
   });
 
   final String visitorName;
@@ -165,68 +131,9 @@ class InviteDraft {
   final String? vehicleReg;
   final DateTime from;
   final DateTime until;
-  final bool multiEntry;
-  final bool prescreenRequired;
 }
 
-enum EntryDirection { inbound, outbound }
-
-enum EntryMethod {
-  qr('QR code'),
-  face('Face scan'),
-  pin('Gate code'),
-  guard('Guard');
-
-  const EntryMethod(this.label);
-  final String label;
-}
-
-enum EntrySubject {
-  you('You'),
-  household('Household'),
-  visitor('Visitors'),
-  delivery('Deliveries');
-
-  const EntrySubject(this.label);
-  final String label;
-}
-
-@immutable
-class EntryEvent {
-  const EntryEvent({
-    required this.id,
-    required this.siteId,
-    required this.personName,
-    required this.subject,
-    required this.direction,
-    required this.method,
-    required this.gateName,
-    required this.time,
-    this.vehicleReg,
-    this.inviteId,
-    this.hasPhoto = false,
-  });
-
-  final String id;
-  final String siteId;
-  final String personName;
-  final EntrySubject subject;
-  final EntryDirection direction;
-  final EntryMethod method;
-  final String gateName;
-  final DateTime time;
-  final String? vehicleReg;
-  final String? inviteId;
-  final bool hasPhoto;
-
-  bool get isInbound => direction == EntryDirection.inbound;
-
-  String get headline => subject == EntrySubject.you
-      ? (isInbound ? 'You came in' : 'You went out')
-      : '$personName ${isInbound ? 'arrived' : 'left'}';
-}
-
-enum NotificationKind { arrival, departure, prescreen, notice }
+enum NotificationKind { arrival, departure, notice }
 
 @immutable
 class AppNotification {
@@ -238,8 +145,6 @@ class AppNotification {
     required this.body,
     required this.time,
     this.read = false,
-    this.entryId,
-    this.inviteId,
   });
 
   final String id;
@@ -249,8 +154,6 @@ class AppNotification {
   final String body;
   final DateTime time;
   final bool read;
-  final String? entryId;
-  final String? inviteId;
 
   AppNotification copyWith({bool? read}) => AppNotification(
     id: id,
@@ -260,7 +163,5 @@ class AppNotification {
     body: body,
     time: time,
     read: read ?? this.read,
-    entryId: entryId,
-    inviteId: inviteId,
   );
 }

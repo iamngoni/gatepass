@@ -234,7 +234,7 @@ class GpType {
   TextStyle get chip =>
       _base(fontSize: 12, weight: FontWeight.w600, height: 1.3);
 
-  /// Small caps-style group label above a list: TODAY, ON SITE NOW.
+  /// Small caps-style group label above a list: TODAY, UPCOMING.
   TextStyle get overline => _base(
     fontSize: 11,
     weight: FontWeight.w700,

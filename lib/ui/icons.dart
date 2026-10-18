@@ -7,7 +7,7 @@ abstract final class GpIcons {
   // Tabs.
   static const home = LucideIcons.house;
   static const visitors = LucideIcons.users;
-  static const activity = LucideIcons.history;
+  static const history = LucideIcons.history;
   static const account = LucideIcons.circleUser;
 
   // Shared actions.
@@ -23,11 +23,9 @@ abstract final class GpIcons {
   static const error = LucideIcons.circleAlert;
   static const chevronLeft = LucideIcons.chevronLeft;
   static const chevronRight = LucideIcons.chevronRight;
-  static const chevronsUpDown = LucideIcons.chevronsUpDown;
   static const refresh = LucideIcons.refreshCw;
 
   // Header.
-  static const pass = LucideIcons.qrCode;
   static const bell = LucideIcons.bell;
   static const bellOff = LucideIcons.bellOff;
 
@@ -35,7 +33,6 @@ abstract final class GpIcons {
   static const invite = LucideIcons.userPlus;
   static const person = LucideIcons.user;
   static const personMissing = LucideIcons.userX;
-  static const verified = LucideIcons.shieldCheck;
   static const clock = LucideIcons.clock;
   static const calendar = LucideIcons.calendar;
   static const calendarCheck = LucideIcons.calendarCheck;
@@ -43,21 +40,10 @@ abstract final class GpIcons {
   static const link = LucideIcons.link;
   static const phone = LucideIcons.phone;
   static const car = LucideIcons.car;
-  static const repeat = LucideIcons.repeat;
   static const arrivals = LucideIcons.logIn;
   static const departures = LucideIcons.logOut;
   static const gate = LucideIcons.doorOpen;
-  static const direction = LucideIcons.arrowUpDown;
-  static const scan = LucideIcons.scanLine;
   static const notice = LucideIcons.megaphone;
-  static const flag = LucideIcons.flag;
   static const property = LucideIcons.building2;
-  static const security = LucideIcons.headset;
   static const appearance = LucideIcons.sunMoon;
-
-  // Delivery and ride services.
-  static const ride = LucideIcons.carTaxiFront;
-  static const food = LucideIcons.scooter;
-  static const groceries = LucideIcons.shoppingBasket;
-  static const parcel = LucideIcons.package;
 }

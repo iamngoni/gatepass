@@ -190,7 +190,7 @@ class SectionHeading extends StatelessWidget {
   );
 }
 
-/// Small group label above a list: TODAY, ON SITE NOW.
+/// Small group label above a list: TODAY, UPCOMING.
 class GroupLabel extends StatelessWidget {
   const GroupLabel(this.text, {super.key});
 

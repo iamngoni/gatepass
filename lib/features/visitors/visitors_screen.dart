@@ -7,7 +7,7 @@ import '../../util/format.dart';
 import '../../widgets/tiles.dart';
 import 'invite_form_screen.dart';
 
-enum _Filter { upcoming, onSite, past }
+enum _Filter { upcoming, past }
 
 class VisitorsScreen extends StatefulWidget {
   const VisitorsScreen({super.key});
@@ -24,12 +24,9 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
     final state = AppScope.of(context);
     final list = switch (_filter) {
       _Filter.upcoming => state.upcoming,
-      _Filter.onSite => state.onSite,
       _Filter.past => state.past,
     };
-    final groups = _filter == _Filter.onSite
-        ? [('On site now', list)]
-        : _groupByDay(list);
+    final groups = _groupByDay(list);
 
     return GpScreen(
       child: ListView(
@@ -39,11 +36,7 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: GpSpace.gutter),
             child: GpSegmented(
-              segments: [
-                'Upcoming · ${state.upcoming.length}',
-                'On site · ${state.onSite.length}',
-                'Past',
-              ],
+              segments: ['Active · ${state.upcoming.length}', 'Past'],
               selectedIndex: _filter.index,
               onChanged: (i) => setState(() => _filter = _Filter.values[i]),
             ),
@@ -91,15 +84,10 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
       action: 'Invite a visitor',
       onAction: () => openInviteForm(context),
     ),
-    _Filter.onSite => const EmptyPanel(
-      icon: GpIcons.visitors,
-      title: 'No one on site',
-      body: 'Visitors show up here when they come through the gate.',
-    ),
     _Filter.past => const EmptyPanel(
-      icon: GpIcons.activity,
+      icon: GpIcons.history,
       title: 'No past visits',
-      body: 'Finished, expired and revoked invites end up here.',
+      body: 'Expired and revoked invites end up here.',
     ),
   };
 

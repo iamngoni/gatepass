@@ -5,16 +5,17 @@ import 'package:flutter/foundation.dart';
 
 import '../gate_repository.dart';
 import '../models.dart';
+import '../services.dart';
 import 'atg_client.dart';
 import 'atg_config.dart';
 
 /// A live [GateRepository] that talks to the real At The Gate backend with the
 /// signed-in resident's own Firebase token.
 ///
-/// What's wired: OTP sign-in, list invites, create invite, revoke invite.
-/// What's deliberately not: the QR pass, gate entries and notifications aren't
-/// mapped yet (their response shapes are unknown), so they return empty / throw
-/// rather than invent data. The invite flow is the part to verify first.
+/// What's wired: OTP sign-in, account discovery, invitations
+/// (list/create/revoke), and notifications.
+/// The account has no gate-entry permission, so the app does not offer an
+/// activity screen or invent visitor arrival history.
 ///
 /// The JSON field names used for *reading* invites and for *writing* create /
 /// revoke are inferred (see [AtgConfig]). Reading is safe to run blind — it only
@@ -35,6 +36,7 @@ class AtgGateRepository implements GateRepository {
   String? _accountEmail;
   String? _accountUnit;
   String? _estateName;
+  int? _invitationHorizonDays;
 
   int? _invitationCategoryId;
 
@@ -69,7 +71,7 @@ class AtgGateRepository implements GateRepository {
     );
   }
 
-  /// The estate account uid used by visitor/entry endpoints. It is distinct
+  /// The estate account uid used by visitor endpoints. It is distinct
   /// from the Firebase login uid: `/api/user/v2/settings` returns it as
   /// `accessPermissions.hostUid`.
   String? get _uid => _accountUid ?? _resident?.id ?? _auth.session?.uid;
@@ -172,6 +174,7 @@ class AtgGateRepository implements GateRepository {
         name: _estateName ?? 'My estate',
         unit: _accountUnit ?? '',
         area: '',
+        inviteHorizonDays: _invitationHorizonDays ?? 30,
       ),
     ];
   }
@@ -220,6 +223,11 @@ class AtgGateRepository implements GateRepository {
       );
       final app = _asMapOrEmpty(settings['appSettings']);
       final access = _asMapOrEmpty(settings['accessPermissions']);
+      final userSettings = _asMapOrEmpty(settings['userSettings']);
+      final horizon = userSettings['invitationMaxDaysFromToday'];
+      if (horizon is num) {
+        _invitationHorizonDays = horizon.toInt().clamp(1, 365);
+      }
       _estateName =
           _firstString(app, const ['brandName', 'name']) ?? _estateName;
       _accountUnit =
@@ -288,8 +296,8 @@ class AtgGateRepository implements GateRepository {
       // ATG stores timestamps as epoch milliseconds.
       AtgConfig.fValidFrom: draft.from.toUtc().millisecondsSinceEpoch,
       AtgConfig.fValidTill: draft.until.toUtc().millisecondsSinceEpoch,
-      // One visit is explicit; multi-entry is left to the estate's default.
-      if (!draft.multiEntry) AtgConfig.fVisitsAllowed: 1,
+      // This flow creates a single-entry invitation.
+      AtgConfig.fVisitsAllowed: 1,
       AtgConfig.fNotifyOn: 'both',
     };
     _guardWrite('create invite', AtgConfig.createVisitorPath, body);
@@ -346,19 +354,6 @@ class AtgGateRepository implements GateRepository {
     // The app refreshes from this returned invite; we only know its new status.
     return _revokedStub(inviteId);
   }
-
-  // --- not mapped yet (shapes unknown): stay honest rather than fake data ---
-
-  @override
-  Future<AccessPass> fetchPass(String siteId) async {
-    throw AtgException(
-      'The resident QR pass is not mapped to the live API yet. '
-      'Use mock mode for the Pass tab, or capture the pass request to add it.',
-    );
-  }
-
-  @override
-  Future<List<EntryEvent>> fetchEntries(String siteId) async => const [];
 
   @override
   Future<List<AppNotification>> fetchNotifications(String siteId) async {
@@ -454,8 +449,6 @@ class AtgGateRepository implements GateRepository {
               lower.contains('left') ||
               lower.contains('depart')
         ? NotificationKind.departure
-        : lower.contains('prescreen') || lower.contains('approv')
-        ? NotificationKind.prescreen
         : NotificationKind.notice;
     return AppNotification(
       id:
@@ -512,7 +505,6 @@ class AtgGateRepository implements GateRepository {
             tillText != null
         ? '$fromText – $tillText'
         : null;
-    final visitsAllowed = m['visitsAllowed'];
     // ATG stores the parts separately (`name` + `surname`); joining them keeps
     // "Quick Invite Probe" from collapsing to "Quick".
     final explicitName = _firstString(m, const ['visitorName', 'fullName']);
@@ -534,12 +526,13 @@ class AtgGateRepository implements GateRepository {
           'atg-${from.millisecondsSinceEpoch}',
       siteId: siteId,
       visitorName: name,
-      serviceId: fallbackDraft?.serviceId,
+      serviceId: fallbackDraft?.serviceId ?? serviceIdForName(name),
       phone:
           _firstString(m, const ['mobile', 'phoneNumber', 'phone']) ??
           fallbackDraft?.phone,
       vehicleReg:
           _firstString(m, const [
+            AtgConfig.fLicence,
             'licence',
             'license',
             'vehicle',
@@ -548,17 +541,10 @@ class AtgGateRepository implements GateRepository {
           fallbackDraft?.vehicleReg,
       from: from,
       until: until,
-      multiEntry: switch (_asBool(m[AtgConfig.fSingleEntry] ?? m['single'])) {
-        final bool single => !single,
-        null => switch (visitsAllowed) {
-          final num n => n != 1,
-          _ => fallbackDraft?.multiEntry ?? false,
-        },
-      },
-      prescreenRequired: fallbackDraft?.prescreenRequired ?? true,
       status: _mapStatus(
         _firstString(m, const ['status', 'state']),
         deleted: _asBool(m['deleted']),
+        until: until,
       ),
       code: _firstString(m, const ['code', 'pin', 'accessCode']) ?? '',
       link:
@@ -587,28 +573,20 @@ class AtgGateRepository implements GateRepository {
     createdAt: DateTime.now(),
   );
 
-  InviteStatus _mapStatus(String? raw, {bool? deleted}) {
+  InviteStatus _mapStatus(
+    String? raw, {
+    bool? deleted,
+    required DateTime until,
+  }) {
     if (deleted == true) return InviteStatus.revoked;
     final s = (raw ?? '').toLowerCase();
     if (s.contains('revok') || s.contains('delet') || s.contains('cancel')) {
       return InviteStatus.revoked;
     }
-    if (s.contains('onsite') ||
-        s.contains('on_site') ||
-        s.contains('on site')) {
-      return InviteStatus.onSite;
+    if (s.contains('expire') || until.isBefore(DateTime.now())) {
+      return InviteStatus.expired;
     }
-    if (s.contains('complete') || s.contains('left') || s.contains('done')) {
-      return InviteStatus.completed;
-    }
-    if (s.contains('expire')) return InviteStatus.expired;
-    if (s.contains('pending') ||
-        s.contains('await') ||
-        s.contains('prescreen') ||
-        s.contains('pre-screen')) {
-      return InviteStatus.awaitingPrescreen;
-    }
-    return InviteStatus.ready;
+    return InviteStatus.active;
   }
 
   // --- tiny utils ---
