@@ -22,9 +22,9 @@ class AtgException implements Exception {
 }
 
 /// Thin JSON-over-HTTP helper on `dart:io`, so the app needs no new package.
-/// Logs are redacted: anything that looks like a JWT is masked, so the console
-/// shows the shape of a response (the key names we need) without leaking the
-/// user's live tokens.
+/// Logs are redacted before they reach the console: credential fields, phone
+/// numbers, JWTs and long opaque tokens are masked while the response's shape
+/// (its key names and non-sensitive values) stays readable.
 class AtgHttp {
   AtgHttp({HttpClient? client}) : _client = client ?? HttpClient();
 
@@ -32,6 +32,12 @@ class AtgHttp {
 
   static final _jwt = RegExp(
     r'[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{8,}',
+  );
+  static final _opaqueCredential = RegExp(r'[A-Za-z0-9_-]{80,}');
+  static final _e164Phone = RegExp(r'(?<![0-9])\+[1-9][0-9]{7,14}(?![0-9])');
+  static final _credentialKeyFallback = RegExp(
+    r'("(?:refreshToken|refresh_token|idToken|id_token|access_token|token|customToken|custom_token)"\s*:\s*")[^"]*(")',
+    caseSensitive: false,
   );
 
   Future<dynamic> send(
@@ -128,7 +134,95 @@ class AtgHttp {
     }
   }
 
-  String _redact(String s) => s.replaceAll(_jwt, '«jwt»');
+  String _redact(String s) {
+    final trimmed = s.trim();
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      try {
+        return jsonEncode(_redactValue(jsonDecode(trimmed)));
+      } on FormatException {
+        // Fall through to text/form redaction for malformed JSON.
+      }
+    }
+
+    // Form bodies and query strings: mask by field name.
+    if (s.contains('=') && !s.contains(' ')) {
+      final parts = s.split('&');
+      if (parts.every((part) => part.contains('='))) {
+        return parts
+            .map((part) {
+              final i = part.indexOf('=');
+              if (i < 0) return _redactText(part);
+              final key = part.substring(0, i);
+              if (_isCredentialKey(key)) return '$key=«redacted»';
+              if (_isPhoneKey(key)) return '$key=«phone»';
+              return '$key=${_redactText(part.substring(i + 1))}';
+            })
+            .join('&');
+      }
+    }
+
+    return _redactText(s).replaceAllMapped(
+      _credentialKeyFallback,
+      (m) => '${m[1]}«redacted»${m[2]}',
+    );
+  }
+
+  dynamic _redactValue(dynamic node) {
+    if (node is Map) {
+      return {
+        for (final entry in node.entries)
+          entry.key.toString(): _isCredentialKey(entry.key.toString())
+              ? '«redacted»'
+              : _isPhoneKey(entry.key.toString())
+              ? '«phone»'
+              : _redactValue(entry.value),
+      };
+    }
+    if (node is List) return node.map(_redactValue).toList();
+    if (node is String) return _redactText(node);
+    return node;
+  }
+
+  String _redactText(String value) => value
+      .replaceAll(_jwt, '«jwt»')
+      .replaceAll(_opaqueCredential, '«token»')
+      .replaceAll(_e164Phone, '«phone»');
+
+  static bool _isCredentialKey(String key) {
+    const names = {
+      'authorization',
+      'cookie',
+      'setcookie',
+      'token',
+      'customtoken',
+      'authtoken',
+      'firebasetoken',
+      'idtoken',
+      'accesstoken',
+      'refreshtoken',
+      'bearertoken',
+      'sessiontoken',
+      'securitytoken',
+      'xidtoken',
+      'apikey',
+    };
+    return names.contains(_normalizeKey(key));
+  }
+
+  static bool _isPhoneKey(String key) {
+    const names = {
+      'loginstring',
+      'contact',
+      'mobile',
+      'phone',
+      'phonenumber',
+      'msisdn',
+    };
+    return names.contains(_normalizeKey(key));
+  }
+
+  static String _normalizeKey(String key) =>
+      key.replaceAll(RegExp(r'[^A-Za-z0-9]'), '').toLowerCase();
 }
 
 /// A signed-in session: the Firebase ID token the ATG API wants, plus the
