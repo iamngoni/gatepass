@@ -68,8 +68,12 @@ archive as already read).
 - Create/update: `POST /api/v5/visitor/profile` with `name`, `surname`,
   `phoneNumber`, `carLic`, `categoryId`, `validFrom`, `validTill` (epoch ms),
   `visitsAllowed`, `notifyOn`, …
-- Share: `POST /api/visitor/v4/share` with `{"id": <visitor id>, "email": …}`
-- Revoke: `POST /api/visitor/profile/delete` with `{"id": <visitor id>}`
+- Share: `POST /api/visitor/v4/share` with `id` + `email`
+- Revoke: `POST /api/visitor/profile/delete` with `id`
+
+Revoke was verified live: this endpoint ignores a JSON body (`500 id can't be
+null`) and wants `id` as a query or form parameter. Share uses the same
+transport in ATG's client but has not been exercised from this app.
 
 Share and delete take the visitor record `id`, not the host `uid`.
 
