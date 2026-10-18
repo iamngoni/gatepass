@@ -47,11 +47,7 @@ class AtgGateRepository implements GateRepository {
     );
   }
 
-  Future<dynamic> _post(
-    String path,
-    Object body, {
-    String context = '',
-  }) async {
+  Future<dynamic> _post(String path, Object body, {String context = ''}) async {
     return _http.send(
       'POST',
       Uri.parse('${AtgConfig.apiBase}$path'),
@@ -70,10 +66,24 @@ class AtgGateRepository implements GateRepository {
   @override
   Future<Resident> signIn({required String phone, required String code}) async {
     await _auth.verifyAndExchange(_normalizeMobile(phone), code);
-    // Pull the resident's profile so the app has a name/email and sites.
-    final profile = await _get(AtgConfig.profileFullPath, context: 'profile');
-    _resident = _mapResident(profile, fallbackPhone: phone);
-    return _resident!;
+    // Pull the resident's profile so the app has a name/email and sites. A
+    // failed profile read must not undo a successful OTP sign-in: log it and
+    // enter with what the Firebase session already tells us.
+    Resident who;
+    try {
+      final profile = await _get(AtgConfig.profileFullPath, context: 'profile');
+      who = _mapResident(profile, fallbackPhone: phone);
+    } on Object catch (e) {
+      debugPrint('[ATG] profile unavailable after sign-in: $e');
+      who = Resident(
+        id: _auth.session?.uid ?? 'me',
+        name: 'Resident',
+        phone: phone,
+        email: '',
+      );
+    }
+    _resident = who;
+    return who;
   }
 
   @override
@@ -81,9 +91,13 @@ class AtgGateRepository implements GateRepository {
     // Sites usually arrive inside the profile; parse them if present, otherwise
     // fall back to a single site so the app can proceed (the invite endpoints
     // appear to be scoped by the token, not a site id).
-    final profile = await _get(AtgConfig.profileFullPath, context: 'profile');
-    final sites = _mapSites(profile);
-    if (sites.isNotEmpty) return sites;
+    try {
+      final profile = await _get(AtgConfig.profileFullPath, context: 'profile');
+      final sites = _mapSites(profile);
+      if (sites.isNotEmpty) return sites;
+    } on Object catch (e) {
+      debugPrint('[ATG] sites unavailable from profile: $e');
+    }
     return [
       Site(
         id: _auth.session?.uid ?? 'atg',
@@ -131,7 +145,8 @@ class AtgGateRepository implements GateRepository {
     final created = _asMap(
       await _post(AtgConfig.createVisitorPath, body, context: 'create'),
     );
-    final id = _firstString(created, const ['uid', 'id', 'profileId']) ??
+    final id =
+        _firstString(created, const ['uid', 'id', 'profileId']) ??
         'atg-${DateTime.now().millisecondsSinceEpoch}';
 
     // Second call: generate/send the share link for the invite just created.
@@ -200,7 +215,8 @@ class AtgGateRepository implements GateRepository {
     final m = _asMapOrEmpty(json);
     final profile = _asMapOrEmpty(m['profile'] ?? m['user'] ?? m['data']);
     final src = profile.isNotEmpty ? profile : m;
-    final name = _firstString(src, const [
+    final name =
+        _firstString(src, const [
           'name',
           'fullName',
           'full_name',
@@ -211,11 +227,13 @@ class AtgGateRepository implements GateRepository {
           _firstString(src, const ['lastName', 'last_name']),
         ].whereType<String>().join(' ').trim();
     return Resident(
-      id: _firstString(src, const ['uid', 'id', 'userId']) ??
+      id:
+          _firstString(src, const ['uid', 'id', 'userId']) ??
           _auth.session?.uid ??
           'me',
       name: name.isEmpty ? 'Resident' : name,
-      phone: _firstString(src, const ['mobile', 'phoneNumber', 'phone']) ??
+      phone:
+          _firstString(src, const ['mobile', 'phoneNumber', 'phone']) ??
           fallbackPhone,
       email: _firstString(src, const ['email']) ?? '',
     );
@@ -223,7 +241,8 @@ class AtgGateRepository implements GateRepository {
 
   List<Site> _mapSites(dynamic json) {
     final m = _asMapOrEmpty(json);
-    final raw = m['sites'] ??
+    final raw =
+        m['sites'] ??
         m['estates'] ??
         m['complexes'] ??
         _asMapOrEmpty(m['profile'])['sites'];
@@ -234,7 +253,8 @@ class AtgGateRepository implements GateRepository {
             final sm = s.cast<String, dynamic>();
             return Site(
               id: _firstString(sm, const ['uid', 'id', 'siteId']) ?? '',
-              name: _firstString(sm, const ['name', 'siteName', 'estate']) ??
+              name:
+                  _firstString(sm, const ['name', 'siteName', 'estate']) ??
                   'Estate',
               unit: _firstString(sm, const ['unit', 'erf', 'address']) ?? '',
               area: _firstString(sm, const ['area', 'suburb', 'city']) ?? '',
@@ -249,35 +269,38 @@ class AtgGateRepository implements GateRepository {
     InviteDraft? fallbackDraft,
     String? fallbackId,
   }) {
-    final from = _parseDate(m[AtgConfig.fDateFrom] ??
-            m['from'] ??
-            m['validFrom'] ??
-            m['startDate']) ??
+    final from =
+        _parseDate(
+          m[AtgConfig.fDateFrom] ??
+              m['from'] ??
+              m['validFrom'] ??
+              m['startDate'],
+        ) ??
         fallbackDraft?.from ??
         DateTime.now();
-    final until = _parseDate(
+    final until =
+        _parseDate(
           m[AtgConfig.fDateTo] ?? m['to'] ?? m['until'] ?? m['endDate'],
         ) ??
         fallbackDraft?.until ??
         from.add(const Duration(hours: 4));
-    final name = _firstString(m, const [
-          'visitorName',
-          'name',
-          'fullName',
-          'visitor',
-        ]) ??
+    final name =
+        _firstString(m, const ['visitorName', 'name', 'fullName', 'visitor']) ??
         fallbackDraft?.visitorName ??
         'Visitor';
     return Invite(
-      id: _firstString(m, const ['uid', 'id', 'profileId']) ??
+      id:
+          _firstString(m, const ['uid', 'id', 'profileId']) ??
           fallbackId ??
           'atg-${from.millisecondsSinceEpoch}',
       siteId: siteId,
       visitorName: name,
       serviceId: fallbackDraft?.serviceId,
-      phone: _firstString(m, const ['mobile', 'phoneNumber', 'phone']) ??
+      phone:
+          _firstString(m, const ['mobile', 'phoneNumber', 'phone']) ??
           fallbackDraft?.phone,
-      vehicleReg: _firstString(m, const [
+      vehicleReg:
+          _firstString(m, const [
             'licence',
             'license',
             'vehicle',
@@ -296,28 +319,30 @@ class AtgGateRepository implements GateRepository {
       link: _firstString(m, const [AtgConfig.fShareLink, 'link', 'url']) ?? '',
       createdAt:
           _parseDate(m['createdAt'] ?? m['created'] ?? m['dateCreated']) ??
-              DateTime.now(),
+          DateTime.now(),
     );
   }
 
   Invite _revokedStub(String id) => Invite(
-        id: id,
-        siteId: '',
-        visitorName: '',
-        from: DateTime.now(),
-        until: DateTime.now(),
-        status: InviteStatus.revoked,
-        code: '',
-        link: '',
-        createdAt: DateTime.now(),
-      );
+    id: id,
+    siteId: '',
+    visitorName: '',
+    from: DateTime.now(),
+    until: DateTime.now(),
+    status: InviteStatus.revoked,
+    code: '',
+    link: '',
+    createdAt: DateTime.now(),
+  );
 
   InviteStatus _mapStatus(String? raw) {
     final s = (raw ?? '').toLowerCase();
     if (s.contains('revok') || s.contains('delet') || s.contains('cancel')) {
       return InviteStatus.revoked;
     }
-    if (s.contains('onsite') || s.contains('on_site') || s.contains('on site')) {
+    if (s.contains('onsite') ||
+        s.contains('on_site') ||
+        s.contains('on site')) {
       return InviteStatus.onSite;
     }
     if (s.contains('complete') || s.contains('left') || s.contains('done')) {
@@ -389,7 +414,13 @@ class AtgGateRepository implements GateRepository {
   static List<dynamic> _listOf(dynamic v) {
     if (v is List) return v;
     if (v is Map) {
-      for (final key in const ['data', 'items', 'results', 'profiles', 'list']) {
+      for (final key in const [
+        'data',
+        'items',
+        'results',
+        'profiles',
+        'list',
+      ]) {
         final inner = v[key];
         if (inner is List) return inner;
       }

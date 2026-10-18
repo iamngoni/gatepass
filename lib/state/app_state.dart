@@ -141,9 +141,15 @@ class AppState extends ChangeNotifier {
     final who = await _repo.signIn(phone: phone, code: code);
     sites = await _repo.fetchSites();
     _site = sites.first;
-    await refresh();
     resident = who;
     notifyListeners();
+    // Entering the app must not depend on the first data load: authenticated
+    // endpoints may still be settling, and the tabs can retry on pull.
+    try {
+      await refresh();
+    } on Object catch (e) {
+      debugPrint('[Gatepass] initial refresh failed: $e');
+    }
   }
 
   void signOut() {
