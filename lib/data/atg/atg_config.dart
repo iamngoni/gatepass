@@ -58,7 +58,8 @@ class AtgConfig {
   static const invitesListPath =
       '/api/visitor/v3/profiles'; // GET: list visitor profiles
   static const visitorDetailPath = '/api/v5/visitor/profile'; // GET: one invite
-  static const createVisitorPath = '/api/visitor'; // POST: create invite
+  static const createVisitorPath =
+      '/api/v5/visitor/profile'; // POST: create/update a visitor profile
   static const shareVisitorPath = '/api/visitor/v4/share'; // POST: send invite
   static const deleteVisitorPath =
       '/api/visitor/profile/delete'; // POST: revoke (soft-delete)
@@ -93,20 +94,33 @@ class AtgConfig {
   static const appBuildNumber = '280202';
   static const platform = 'android';
 
-  // --- INFERRED visitor request field names. Fix from the logged raw JSON. ---
-  static const fMobile = 'mobile';
-  static const fVisitorName = 'visitorName';
-  static const fFirstName = 'firstName';
-  static const fLastName = 'lastName';
+  // --- Visitor request field names. Confirmed against ATG's own web client
+  // (`main.dart.js`, v28.2.5): POST /api/v5/visitor/profile sends
+  // id, uid, name, surname, email, company, photo, idNumber, carLic,
+  // phoneNumber, allowDuplication, nfc, field1..3, categoryId, defaultDeletion,
+  // forgetVisitor, forgetVisitorDays, leeway, visitorFields, defaultLimitation,
+  // validFrom, validTill, visitsAllowed, weekdayLimit, weekdays, notifyOn,
+  // regeneratePinCode, resetDate, resetVisits. ---
+  static const fMobile = 'phoneNumber';
+  static const fVisitorName = 'name';
+  static const fFirstName = 'name';
+  static const fLastName = 'surname';
   static const fCategoryId = 'categoryId';
-  static const fDateFrom = 'dateFrom';
-  static const fDateTo = 'dateTo';
+  static const fDateFrom = 'validFrom';
+  static const fDateTo = 'validTill';
   static const fValidFrom = 'validFrom';
-  static const fAddress = 'address';
-  static const fLicence = 'licence';
-  static const fSingleEntry = 'single'; // true = one entry, false = multi
-  static const fShareLink = 'shareLink';
-  static const fProfileId = 'uid'; // id used by delete/share: maybe 'id'
+  static const fValidTill = 'validTill';
+  static const fVisitsAllowed = 'visitsAllowed';
+  static const fNotifyOn = 'notifyOn';
+  static const fAddress = 'address'; // not part of the profile create body
+  static const fLicence = 'carLic';
+  static const fSingleEntry = 'single'; // not part of the create body
+  static const fShareLink = 'linkInvitation';
+
+  /// Share (`/api/visitor/v4/share`) and delete
+  /// (`/api/visitor/profile/delete`) both take this key — the visitor record
+  /// id, not the host uid.
+  static const fProfileId = 'id';
 
   /// `/open/login/check` returns the Firebase custom token under `token`
   /// (ATG's web client passes it straight to signInWithCustomToken). The other

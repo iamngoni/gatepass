@@ -1,3 +1,4 @@
+import '../data/models.dart';
 import 'package:intl/intl.dart';
 
 final _hm = DateFormat.Hm();
@@ -53,6 +54,16 @@ String windowLabel(DateTime from, DateTime until) {
   }
   return '${dayLabel(from)} ${formatTime(from)} – '
       '${dayLabel(until)} ${formatTime(until)}';
+}
+
+/// The validity line for an invite. ATG profiles often have no explicit
+/// window at all, in which case the invite stays valid until it is used up or
+/// revoked — printing a made-up time range would be wrong.
+String inviteValidityLabel(Invite invite) {
+  if (invite.openEnded) return 'Always valid';
+  final text = invite.windowText?.trim();
+  if (text != null && text.isNotEmpty) return text;
+  return windowLabel(invite.from, invite.until);
 }
 
 String durationLabel(Duration d) {

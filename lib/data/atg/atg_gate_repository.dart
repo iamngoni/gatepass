@@ -270,14 +270,16 @@ class AtgGateRepository implements GateRepository {
   Future<Invite> createInvite(String siteId, InviteDraft draft) async {
     final (first, last) = _splitName(draft.visitorName);
     final body = <String, dynamic>{
-      AtgConfig.fVisitorName: draft.visitorName,
       AtgConfig.fFirstName: first,
       if (last.isNotEmpty) AtgConfig.fLastName: last,
       if (draft.phone != null) AtgConfig.fMobile: draft.phone,
       if (draft.vehicleReg != null) AtgConfig.fLicence: draft.vehicleReg,
-      AtgConfig.fDateFrom: draft.from.toUtc().toIso8601String(),
-      AtgConfig.fDateTo: draft.until.toUtc().toIso8601String(),
-      AtgConfig.fSingleEntry: !draft.multiEntry,
+      // ATG stores timestamps as epoch milliseconds.
+      AtgConfig.fValidFrom: draft.from.toUtc().millisecondsSinceEpoch,
+      AtgConfig.fValidTill: draft.until.toUtc().millisecondsSinceEpoch,
+      // One visit is explicit; multi-entry is left to the estate's default.
+      if (!draft.multiEntry) AtgConfig.fVisitsAllowed: 1,
+      AtgConfig.fNotifyOn: 'both',
     };
     _guardWrite('create invite', AtgConfig.createVisitorPath, body);
 
@@ -447,21 +449,36 @@ class AtgGateRepository implements GateRepository {
     InviteDraft? fallbackDraft,
     String? fallbackId,
   }) {
-    final from =
-        _parseDate(
-          m[AtgConfig.fDateFrom] ??
-              m['from'] ??
-              m['validFrom'] ??
-              m['startDate'],
-        ) ??
-        fallbackDraft?.from ??
+    final createdAt =
+        _parseDate(m['dateCreated'] ?? m['createdAt'] ?? m['created']) ??
         DateTime.now();
-    final until =
-        _parseDate(
-          m[AtgConfig.fDateTo] ?? m['to'] ?? m['until'] ?? m['endDate'],
-        ) ??
-        fallbackDraft?.until ??
-        from.add(const Duration(hours: 4));
+    final explicitFrom = _parseDate(
+      m[AtgConfig.fValidFrom] ??
+          m[AtgConfig.fDateFrom] ??
+          m['from'] ??
+          m['startDate'],
+    );
+    final explicitUntil = _parseDate(
+      m[AtgConfig.fDateTo] ??
+          m['validTill'] ??
+          m['to'] ??
+          m['until'] ??
+          m['endDate'],
+    );
+    // ATG profiles are frequently open-ended: no validFrom/validTill at all.
+    // `rememberTill` is the retention horizon (default ~10 years), not the
+    // booking window, so it is only a fallback for sorting.
+    final rememberTill = _parseDate(m['rememberTill']);
+    final openEnded =
+        explicitFrom == null && explicitUntil == null && fallbackDraft == null;
+    final from = explicitFrom ?? fallbackDraft?.from ?? createdAt;
+    final until = explicitUntil ?? fallbackDraft?.until ?? rememberTill ?? from;
+    final fromText = _firstString(m, const ['validFromDateText']);
+    final tillText = _firstString(m, const ['validTillDateText']);
+    final windowText = fromText != null && tillText != null
+        ? '$fromText – $tillText'
+        : null;
+    final visitsAllowed = m['visitsAllowed'];
     final name =
         _firstString(m, const ['visitorName', 'name', 'fullName', 'visitor']) ??
         fallbackDraft?.visitorName ??
@@ -491,15 +508,28 @@ class AtgGateRepository implements GateRepository {
       until: until,
       multiEntry: switch (_asBool(m[AtgConfig.fSingleEntry] ?? m['single'])) {
         final bool single => !single,
-        null => fallbackDraft?.multiEntry ?? false,
+        null => switch (visitsAllowed) {
+          final num n => n != 1,
+          _ => fallbackDraft?.multiEntry ?? false,
+        },
       },
       prescreenRequired: fallbackDraft?.prescreenRequired ?? true,
-      status: _mapStatus(_firstString(m, const ['status', 'state'])),
+      status: _mapStatus(
+        _firstString(m, const ['status', 'state']),
+        deleted: _asBool(m['deleted']),
+      ),
       code: _firstString(m, const ['code', 'pin', 'accessCode']) ?? '',
-      link: _firstString(m, const [AtgConfig.fShareLink, 'link', 'url']) ?? '',
-      createdAt:
-          _parseDate(m['createdAt'] ?? m['created'] ?? m['dateCreated']) ??
-          DateTime.now(),
+      link:
+          _firstString(m, const [
+            AtgConfig.fShareLink,
+            'link',
+            'linkInvitation',
+            'url',
+          ]) ??
+          '',
+      createdAt: createdAt,
+      openEnded: openEnded,
+      windowText: windowText,
     );
   }
 
@@ -515,7 +545,8 @@ class AtgGateRepository implements GateRepository {
     createdAt: DateTime.now(),
   );
 
-  InviteStatus _mapStatus(String? raw) {
+  InviteStatus _mapStatus(String? raw, {bool? deleted}) {
+    if (deleted == true) return InviteStatus.revoked;
     final s = (raw ?? '').toLowerCase();
     if (s.contains('revok') || s.contains('delet') || s.contains('cancel')) {
       return InviteStatus.revoked;

@@ -255,9 +255,10 @@ Future<bool> confirmRevoke(BuildContext context, Invite invite) async {
 
 Future<void> copyGateCode(Invite invite, String siteName) => Clipboard.setData(
   ClipboardData(
-    text:
-        'Gate code for $siteName: ${formatCode(invite.code)} '
-        '(valid until ${formatTime(invite.until)}).',
+    text: invite.openEnded
+        ? 'Gate code for $siteName: ${formatCode(invite.code)}.'
+        : 'Gate code for $siteName: ${formatCode(invite.code)} '
+              '(valid until ${formatTime(invite.until)}).',
   ),
 );
 
@@ -270,7 +271,7 @@ Future<void> shareInvite(
 }) async {
   final message =
       'Hi ${invite.firstName}, you’re invited to $siteName '
-      '(${windowLabel(invite.from, invite.until)}). '
+      '(${inviteValidityLabel(invite)}). '
       'Open this link at the gate: ${invite.link} '
       '— or use code ${formatCode(invite.code)} on the keypad.';
   await Clipboard.setData(ClipboardData(text: message));

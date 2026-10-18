@@ -77,8 +77,10 @@ class InviteTile extends StatelessWidget {
                     const SizedBox(height: GpSpace.xxs),
                     Text(
                       onSite && invite.arrivedAt != null
-                          ? 'Arrived ${formatTime(invite.arrivedAt!)} · until ${formatTime(invite.until)}'
-                          : windowLabel(invite.from, invite.until),
+                          ? invite.openEnded
+                                ? 'Arrived ${formatTime(invite.arrivedAt!)}'
+                                : 'Arrived ${formatTime(invite.arrivedAt!)} · until ${formatTime(invite.until)}'
+                          : inviteValidityLabel(invite),
                       style: context.type.caption,
                     ),
                     if (invite.vehicleReg != null) ...[

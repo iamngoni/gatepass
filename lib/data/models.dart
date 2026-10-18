@@ -86,6 +86,8 @@ class Invite {
     this.prescreenedAt,
     this.arrivedAt,
     this.leftAt,
+    this.openEnded = false,
+    this.windowText,
   });
 
   final String id;
@@ -107,6 +109,14 @@ class Invite {
   final DateTime? prescreenedAt;
   final DateTime? arrivedAt;
   final DateTime? leftAt;
+
+  /// True when ATG gave this profile no `validFrom`/`validTill` window. Such
+  /// an invite is valid until it is used up or revoked; it is not a same-day
+  /// booking, so the UI must not invent times for it.
+  final bool openEnded;
+
+  /// ATG's own formatted window text, when it supplies one.
+  final String? windowText;
 
   bool get isService => serviceId != null;
 
@@ -131,6 +141,8 @@ class Invite {
     prescreenedAt: prescreenedAt,
     arrivedAt: arrivedAt,
     leftAt: leftAt,
+    openEnded: openEnded,
+    windowText: windowText,
   );
 }
 

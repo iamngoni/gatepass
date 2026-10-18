@@ -130,7 +130,7 @@ class InviteDetailScreen extends StatelessWidget {
                 DetailRow(
                   icon: GpIcons.clock,
                   label: 'Valid',
-                  value: windowLabel(invite.from, invite.until),
+                  value: inviteValidityLabel(invite),
                 ),
                 if (invite.phone != null)
                   DetailRow(
@@ -210,6 +210,7 @@ class _Timeline extends StatelessWidget {
         switch (status) {
           InviteStatus.revoked => 'Invite revoked',
           _ when noShow => 'Didn’t arrive',
+          _ when invite.openEnded => 'Anytime — no fixed window',
           _ =>
             'Expected ${dayLabel(invite.from).toLowerCase()} '
                 'from ${formatTime(invite.from)}',
