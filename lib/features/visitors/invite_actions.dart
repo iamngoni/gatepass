@@ -28,6 +28,11 @@ Future<void> quickInvite(
 }) {
   HapticFeedback.lightImpact();
   final invite = AppScope.read(context).createInvite(draft);
+  // The sheet attaches its own error handler, but it may not be mounted before
+  // a fast failure (dry run, cached category) completes. `ignore()` only stops
+  // that failure being reported as an unhandled async error; listeners still
+  // receive it.
+  invite.ignore();
   return showGpSheet<void>(
     context,
     builder: (_) => QuickInviteSheet(draft: draft, invite: invite, note: note),

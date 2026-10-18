@@ -137,5 +137,5 @@ class AtgConfig {
 
   /// When true, create/revoke compose the request and THROW instead of sending,
   /// so a wrong body can't put a junk invite into the real estate system.
-  static const bool dryRunWrites = true;
+  static const bool dryRunWrites = false;
 }

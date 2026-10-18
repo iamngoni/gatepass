@@ -138,6 +138,23 @@ void main() {
     },
   );
 
+  test('name and surname from ATG are joined for display', () async {
+    final repo = AtgGateRepository(
+      http: _FakeHttp({
+        '/api/visitor/v3/profiles': () => {
+          'visitors': [
+            {..._liveInvite, 'name': 'Quick', 'surname': 'Invite Probe'},
+          ],
+        },
+      }),
+    );
+
+    expect(
+      (await repo.fetchInvites('site')).single.visitorName,
+      'Quick Invite Probe',
+    );
+  });
+
   test('deleted visitor rows map to revoked', () async {
     final repo = AtgGateRepository(
       http: _FakeHttp({

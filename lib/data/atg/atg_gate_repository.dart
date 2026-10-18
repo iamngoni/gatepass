@@ -513,10 +513,18 @@ class AtgGateRepository implements GateRepository {
         ? '$fromText – $tillText'
         : null;
     final visitsAllowed = m['visitsAllowed'];
+    // ATG stores the parts separately (`name` + `surname`); joining them keeps
+    // "Quick Invite Probe" from collapsing to "Quick".
+    final explicitName = _firstString(m, const ['visitorName', 'fullName']);
+    final composed = [
+      _firstString(m, const ['name', 'visitor']),
+      _firstString(m, const ['surname', 'lastName']),
+    ].whereType<String>().where((part) => part.trim().isNotEmpty).join(' ');
     final name =
-        _firstString(m, const ['visitorName', 'name', 'fullName', 'visitor']) ??
-        fallbackDraft?.visitorName ??
-        'Visitor';
+        explicitName ??
+        (composed.isNotEmpty
+            ? composed
+            : fallbackDraft?.visitorName ?? 'Visitor');
     return Invite(
       // `uid` is the estate host uid shared by every visitor record, so it is
       // the last resort. `id` is the per-invite record id.
