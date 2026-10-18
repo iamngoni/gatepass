@@ -37,6 +37,8 @@ class AtgGateRepository implements GateRepository {
   String? _estateName;
   bool _loggedInviteShape = false;
 
+  int? _invitationCategoryId;
+
   static final String _notificationReadPath =
       '${Directory.systemTemp.path}/gatepass_notifications_seen.json';
   Set<String>? _seenNotificationIds;
@@ -269,11 +271,14 @@ class AtgGateRepository implements GateRepository {
   @override
   Future<Invite> createInvite(String siteId, InviteDraft draft) async {
     final (first, last) = _splitName(draft.visitorName);
+    final categoryId = await _invitationCategory();
     final body = <String, dynamic>{
+      'uid': ?_uid,
       AtgConfig.fFirstName: first,
       if (last.isNotEmpty) AtgConfig.fLastName: last,
       if (draft.phone != null) AtgConfig.fMobile: draft.phone,
       if (draft.vehicleReg != null) AtgConfig.fLicence: draft.vehicleReg,
+      if (categoryId != null) AtgConfig.fCategoryId: categoryId,
       // ATG stores timestamps as epoch milliseconds.
       AtgConfig.fValidFrom: draft.from.toUtc().millisecondsSinceEpoch,
       AtgConfig.fValidTill: draft.until.toUtc().millisecondsSinceEpoch,
@@ -287,26 +292,42 @@ class AtgGateRepository implements GateRepository {
       await _post(AtgConfig.createVisitorPath, body, context: 'create'),
     );
     final id =
-        _firstString(created, const ['uid', 'id', 'profileId']) ??
+        _firstString(created, const ['id', 'profileId', 'uid']) ??
         'atg-${DateTime.now().millisecondsSinceEpoch}';
 
-    // Second call: generate/send the share link for the invite just created.
-    dynamic shared;
-    final shareBody = {AtgConfig.fProfileId: id};
-    if (!AtgConfig.dryRunWrites) {
-      shared = await _post(
-        AtgConfig.shareVisitorPath,
-        shareBody,
-        context: 'share',
-      );
-    }
+    // Creating the profile already returns its code and share link, so no
+    // second "share" request is needed here. Sending the link stays an
+    // explicit user action.
+    return _mapInvite(created, siteId, fallbackDraft: draft, fallbackId: id);
+  }
 
-    return _mapInvite(
-      {...created, if (shared is Map) ...shared.cast<String, dynamic>()},
-      siteId,
-      fallbackDraft: draft,
-      fallbackId: id,
-    );
+  /// The estate's "Invitation" visitor category. ATG rejects a create without
+  /// one, and the id is per-estate, so it has to be read rather than hardcoded.
+  Future<int?> _invitationCategory() async {
+    final cached = _invitationCategoryId;
+    if (cached != null) return cached;
+    try {
+      final res = await _get(
+        AtgConfig.categoriesPath,
+        query: {'uid': ?_uid},
+        context: 'categories',
+      );
+      for (final item in _listOf(res)) {
+        if (item is! Map) continue;
+        final map = item.cast<String, dynamic>();
+        final name = _firstString(map, const [
+          'name',
+          'categoryName',
+        ])?.toLowerCase();
+        if (name != 'invitation' && name != 'visitor') continue;
+        final id = map['id'];
+        final value = id is num ? id.toInt() : int.tryParse('$id');
+        if (value != null) return _invitationCategoryId = value;
+      }
+    } on Object catch (e) {
+      debugPrint('[ATG] visitor categories unavailable: $e');
+    }
+    return null;
   }
 
   @override
