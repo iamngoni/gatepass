@@ -467,8 +467,10 @@ class AtgGateRepository implements GateRepository {
         fallbackDraft?.visitorName ??
         'Visitor';
     return Invite(
+      // `uid` is the estate host uid shared by every visitor record, so it is
+      // the last resort. `id` is the per-invite record id.
       id:
-          _firstString(m, const ['uid', 'id', 'profileId']) ??
+          _firstString(m, const ['id', 'profileId', 'uid']) ??
           fallbackId ??
           'atg-${from.millisecondsSinceEpoch}',
       siteId: siteId,
