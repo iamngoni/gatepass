@@ -1,0 +1,31 @@
+name: gatepass
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  intl: ^0.20.3
+  lucide_icons_flutter: 3.1.15
+  qr_flutter: ^4.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  # No Material: the app draws every control itself (see lib/ui), so the
+  # Material icon font isn't bundled.
+  fonts:
+    # Variable fonts: GpType sets weight and optical size as font variations.
+    - family: Figtree
+      fonts:
+        - asset: assets/fonts/Figtree-Variable.ttf
+    - family: Bricolage Grotesque
+      fonts:
+        - asset: assets/fonts/BricolageGrotesque-Variable.ttf
