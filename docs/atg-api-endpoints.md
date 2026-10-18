@@ -231,8 +231,8 @@ tracked locally by the app.
 ### Gate entries are not available to this account
 
 `GET /api/entries/v2/getList?...` returns `403`, and the account's
-`accessPermissions` show entries disabled. The Activity tab stays empty rather
-than fabricating history.
+`accessPermissions` show entries disabled. The app therefore has no Activity
+screen and does not fabricate entry history, camera photos, or on-site status.
 
 ### Write verification (one throwaway invite, live account)
 
@@ -249,6 +249,9 @@ Exercised end to end with the repository code on 2026-10-19, then removed:
 - `POST /api/visitor/profile/delete` with the id in a **JSON body fails** with
   `500 java.io.IOException: id can't be null`. The same call with the id as a
   **query parameter or form field** returns `200`. The endpoint ignores JSON.
+- A separate throwaway create with `carLic` succeeded, and the next profile
+  read returned the normalized plate in `carLicSet`, so the vehicle field can be
+  surfaced in the app.
 - After the form/query delete, `GET /api/visitor/v3/profiles` returned only the
   original invite, so the throwaway record was really gone.
 
