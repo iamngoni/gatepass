@@ -77,6 +77,6 @@ transport in ATG's client but has not been exercised from this app.
 
 Share and delete take the visitor record `id`, not the host `uid`.
 
-Writes are still guarded by `AtgConfig.dryRunWrites = true`: the request is
-composed and logged, then the call throws instead of sending. Flip it only when
-you are ready to create one throwaway invite and revoke it straight away.
+`AtgConfig.dryRunWrites` is **off**: create and revoke were verified live with a
+throwaway invite, and the throwaway was removed. Set it back to `true` whenever
+the request shape changes so a bad body cannot reach the estate.
