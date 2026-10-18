@@ -121,3 +121,115 @@ incidents, CSV/scheduled reports. These need elevated roles and aren't part of t
   only identify the project; account access is gated by the Firebase ID token, not the key.
 - This is interop research on an app you have a legitimate account for. Keep it to your own account
   and your own data.
+
+---
+
+## Verified against the live API (resident account, 2026-10-19)
+
+These were confirmed by calling the API with the signed-in resident's own
+Firebase token. Nothing here is inferred.
+
+### Firebase uid ≠ estate account uid
+
+The Firebase login uid that authenticates `x-id-token` is **not** the uid the
+visitor and settings endpoints expect. Resolve the estate account first:
+
+```http
+POST /api/sharedAccess/v11/getList
+x-id-token: <Firebase ID token>
+Content-Type: application/json
+
+{"deviceType":"android","deviceId":"gatepass",
+ "appVersion":"28.2.2","appBuildNumber":"280202"}
+```
+
+The response is `{"sharedAccess":[{...}]}`. Its `hostUid` is the estate account
+uid, and the row also carries `accountName`, `invitationsUserName`,
+`invitationsUserUnit`, `email` and — sensitive — `hostSharedKey`.
+
+`GET` on this path returns `405`; it must be `POST`.
+
+With `hostUid`, these return `200`:
+
+- `GET /api/visitor/v3/profiles?uid=<hostUid>&limit=50`
+- `GET /api/user/v2/settings?uid=<hostUid>`
+- `GET /api/visitor/categories?uid=<hostUid>`
+
+### `/api/profile/full` is not resident metadata
+
+It is the profile **editor** endpoint and returns `400`/`403` for this flow.
+Do not use it to recover the resident's name or unit; use
+`/api/sharedAccess/v11/getList` and `/api/user/v2/settings`.
+
+### Visitor list response (verified)
+
+`GET /api/visitor/v3/profiles` returns an object, not a bare list:
+
+```jsonc
+{"visitors":[{ ... }], "totalNumberFound":1, "loadMore":false,
+ "notifyOnEntrance":true, "notifyOnExit":true}
+```
+
+A visitor row:
+
+```jsonc
+{
+  "id": 5219924235255808,          // per-invite record id (number)
+  "uid": "…",                       // estate hostUid, shared by every row
+  "name": "…",
+  "code": "ATG…",
+  "link": "https://…",
+  "linkInvitation": "https://…",
+  "categoryId": 5219924235255808,
+  "dateCreated": 1792339708895,     // epoch ms
+  "dateChanged": 1792339708895,
+  "changeOrVisitDate": 1792339708895,
+  "rememberTill": 2107699708895,    // retention horizon, ~10 years
+  "statuses": [],
+  "visitsAllowed": 1,
+  "deleted": false,
+  "type": "profile"
+}
+```
+
+There is no `dateFrom`, `dateTo`, `validFrom` or `validTill` on this row. A
+profile with no `validFrom`/`validTill` is **open-ended**: it stays valid until
+it is used up or revoked. `rememberTill` is retention, not the booking window —
+never render it as "valid until" without saying what it is.
+
+### Visitor create / share / delete (confirmed in ATG's web client)
+
+The web client (`app.atthegate.biz/main.dart.js`, v28.2.5) shows the real calls:
+
+| Method | Path | Body |
+|---|---|---|
+| POST | `/api/v5/visitor/profile` | `id, uid, name, surname, email, company, photo, idNumber, carLic, phoneNumber, allowDuplication, nfc, field1..3, categoryId, defaultDeletion, forgetVisitor, forgetVisitorDays, leeway, visitorFields, defaultLimitation, validFrom, validTill, visitsAllowed, weekdayLimit, weekdays, notifyOn, regeneratePinCode, resetDate, resetVisits` |
+| POST | `/api/visitor/v4/share` | `{"id": <visitor id>, "email": <recipient>}` |
+| POST | `/api/visitor/profile/delete` | `{"id": <visitor id>}` |
+| POST | `/api/visitor/profiles/delete` | form: `uid=<hostUid>&ids=[…]` |
+
+`validFrom` / `validTill` are epoch milliseconds. Share and delete take the
+**visitor record id**, not the host uid.
+
+### Notifications (verified)
+
+`GET /api/notifications/getList` returns a bare JSON list of 50 items:
+
+```jsonc
+{"id":"…","title":"<visitor> using invitation … has just Entered <estate>",
+ "customFields":["Name and Surname: …"],
+ "dataAdded":1792339708895,
+ "entryId":"<uid>-<hash>",
+ "notificationType":"CUSTOM_NOTIFICATION",
+ "profileName":"Pedestrian", "deviceName":"Device 1", "importance":0}
+```
+
+The `title` carries the arrival/departure verb, so it is the reliable place to
+derive the notification kind. There is no per-item read flag; read state is
+tracked locally by the app.
+
+### Gate entries are not available to this account
+
+`GET /api/entries/v2/getList?...` returns `403`, and the account's
+`accessPermissions` show entries disabled. The Activity tab stays empty rather
+than fabricating history.

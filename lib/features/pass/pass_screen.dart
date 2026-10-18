@@ -73,7 +73,8 @@ class _PassScreenState extends State<PassScreen> {
           child: EmptyPanel(
             icon: GpIcons.pass,
             title: 'Pass not available yet',
-            body: 'Your estate’s live QR pass isn’t wired to the backend in '
+            body:
+                'Your estate’s live QR pass isn’t wired to the backend in '
                 'this build. Creating and managing invites still works.',
           ),
         ),
