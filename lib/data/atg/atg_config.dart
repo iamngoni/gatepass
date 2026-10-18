@@ -4,19 +4,16 @@
 /// response confirms them.
 ///
 /// CONFIDENCE
-///  - Hosts, auth mechanism, header name, endpoint paths: HIGH — these are
-///    literal strings in the app binary.
-///  - Request/response JSON field names (the `f*` constants) and HTTP methods:
-///    INFERRED. The AOT snapshot doesn't keep field names next to their class,
-///    so these are best guesses from model strings and REST convention.
+///  - Hosts, auth mechanism, header name, endpoint paths: HIGH — literal
+///    strings in the app binary, and confirmed by live calls.
+///  - Visitor and notification read shapes: VERIFIED against the live API on
+///    2026-10-19.
+///  - Create body: VERIFIED live (`POST /api/v5/visitor/profile`).
+///  - Revoke transport: VERIFIED live — the id must be a form/query parameter,
+///    a JSON body is ignored.
 ///
-/// HOW TO FINALISE
-///  1. Keep [dryRunWrites] = true (the default). Create/revoke will compose the
-///     exact request and refuse to send it, so nothing touches your estate.
-///  2. With [debugLog] on, sign in and open Visitors once. `fetchInvites` logs
-///     the real (token-redacted) JSON from YOUR account.
-///  3. Correct the `f*` field names + paths below to match that JSON.
-///  4. Only then set [dryRunWrites] = false to let create/revoke actually send.
+/// Writes stay behind [dryRunWrites]: they compose and log the request, then
+/// throw instead of sending. Flip it only for a deliberate throwaway test.
 library;
 
 class AtgConfig {

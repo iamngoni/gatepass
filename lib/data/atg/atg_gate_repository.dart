@@ -35,7 +35,6 @@ class AtgGateRepository implements GateRepository {
   String? _accountEmail;
   String? _accountUnit;
   String? _estateName;
-  bool _loggedInviteShape = false;
 
   int? _invitationCategoryId;
 
@@ -268,13 +267,6 @@ class AtgGateRepository implements GateRepository {
       query: {'uid': ?_uid, 'limit': '50'},
       context: 'invites',
     );
-    if (!_loggedInviteShape && AtgConfig.debugLog) {
-      _loggedInviteShape = true;
-      debugPrint(
-        '[ATG] First invite payload above. Use it to confirm the f* field '
-        'names in AtgConfig, then flip dryRunWrites off.',
-      );
-    }
     final list = _listOf(res);
     return [
       for (final item in list)
