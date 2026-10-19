@@ -4,8 +4,18 @@ import 'models.dart';
 ///
 /// `AtgGateRepository` (lib/data/atg/) is the live implementation: it talks to
 /// the real At The Gate API with the signed-in resident's own account.
+/// How the sign-in code reaches the resident. ATG sends both, as its own app
+/// offers.
+enum OtpChannel {
+  sms('SMS'),
+  whatsapp('WhatsApp');
+
+  const OtpChannel(this.label);
+  final String label;
+}
+
 abstract interface class GateRepository {
-  Future<void> requestCode(String phone);
+  Future<void> requestCode(String phone, {OtpChannel channel});
   Future<Resident> signIn({required String phone, required String code});
 
   /// Resumes a previously stored session, returning the resident when the

@@ -12,6 +12,7 @@ dependencies:
   intl: ^0.20.3
   lucide_icons_flutter: 3.1.15
   qr: ^3.0.2
+  share_plus: ^13.3.1
 
 dev_dependencies:
   flutter_test:

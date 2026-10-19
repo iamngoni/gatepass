@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import '../../data/gate_repository.dart';
 import '../../state/app_state.dart';
 import '../../ui/ui.dart';
 
@@ -26,6 +27,12 @@ class _SignInScreenState extends State<SignInScreen> {
   final _phone = TextEditingController();
   final _code = TextEditingController();
   bool _codeSent = false;
+
+  /// The way the last code went, so a resend goes the same way.
+  OtpChannel _channel = OtpChannel.sms;
+
+  /// The way a code is being sent right now, for its button's spinner.
+  OtpChannel? _sending;
   bool _busy = false;
 
   String get _fullPhone => '+27 ${_phone.text.trim()}';
@@ -47,13 +54,19 @@ class _SignInScreenState extends State<SignInScreen> {
     super.dispose();
   }
 
-  Future<void> _sendCode() async {
-    setState(() => _busy = true);
+  Future<void> _sendCode(OtpChannel channel) async {
+    setState(() {
+      _busy = true;
+      _sending = channel;
+    });
     try {
-      await AppScope.read(context).requestCode(_fullPhone);
+      await AppScope.read(context).requestCode(_fullPhone, channel: channel);
     } on Object catch (e) {
       if (mounted) {
-        setState(() => _busy = false);
+        setState(() {
+          _busy = false;
+          _sending = null;
+        });
         Toast.show(context, _authError(e));
       }
       return;
@@ -61,6 +74,8 @@ class _SignInScreenState extends State<SignInScreen> {
     if (!mounted) return;
     setState(() {
       _busy = false;
+      _sending = null;
+      _channel = channel;
       _codeSent = true;
     });
   }
@@ -83,9 +98,10 @@ class _SignInScreenState extends State<SignInScreen> {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final type = context.type;
-    final canContinue = _codeSent
-        ? _code.text.length == 6
-        : _phone.text.replaceAll(' ', '').length >= 9;
+    final canSend = _phone.text.replaceAll(' ', '').length >= 9 && !_busy;
+    final other = _channel == OtpChannel.sms
+        ? OtpChannel.whatsapp
+        : OtpChannel.sms;
 
     return GpScreen(
       avoidKeyboard: true,
@@ -101,22 +117,55 @@ class _SignInScreenState extends State<SignInScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (_codeSent)
+              if (_codeSent) ...[
                 Padding(
                   padding: const EdgeInsets.only(bottom: GpSpace.md),
                   child: Text(
-                    'The code was sent by SMS. It can take a few seconds.',
+                    'The code was sent by ${_channel.label}. It can take a '
+                    'few seconds.',
                     style: type.caption,
                   ),
                 ),
-              GpButton(
-                label: _codeSent ? 'Sign in' : 'Send code',
-                size: GpButtonSize.large,
-                loading: _busy,
-                onPressed: canContinue
-                    ? (_codeSent ? _verify : _sendCode)
-                    : null,
-              ),
+                GpButton(
+                  label: 'Sign in',
+                  size: GpButtonSize.large,
+                  loading: _busy,
+                  onPressed: _code.text.length == 6 ? _verify : null,
+                ),
+              ] else ...[
+                Padding(
+                  padding: const EdgeInsets.only(bottom: GpSpace.md),
+                  child: Text('Send the code by', style: type.caption),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: GpButton(
+                        label: 'SMS',
+                        icon: GpIcons.sms,
+                        variant: GpButtonVariant.secondary,
+                        size: GpButtonSize.large,
+                        loading: _sending == OtpChannel.sms,
+                        onPressed: canSend
+                            ? () => _sendCode(OtpChannel.sms)
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(width: GpSpace.sm),
+                    Expanded(
+                      child: GpButton(
+                        label: 'WhatsApp',
+                        icon: GpIcons.chat,
+                        size: GpButtonSize.large,
+                        loading: _sending == OtpChannel.whatsapp,
+                        onPressed: canSend
+                            ? () => _sendCode(OtpChannel.whatsapp)
+                            : null,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -142,7 +191,11 @@ class _SignInScreenState extends State<SignInScreen> {
           ),
           SizedBox(height: MediaQuery.sizeOf(context).height * .14),
           Text(
-            _codeSent ? 'Check your messages' : 'Get through the gate faster',
+            _codeSent
+                ? _channel == OtpChannel.whatsapp
+                      ? 'Check WhatsApp'
+                      : 'Check your messages'
+                : 'Get through the gate faster',
             style: type.display,
           ),
           const SizedBox(height: GpSpace.sm),
@@ -204,9 +257,23 @@ class _SignInScreenState extends State<SignInScreen> {
                   variant: GpButtonVariant.text,
                   size: GpButtonSize.compact,
                   expand: false,
-                  onPressed: _busy ? null : _sendCode,
+                  onPressed: _busy ? null : () => _sendCode(_channel),
                 ),
               ],
+            ),
+            Center(
+              child: GpButton(
+                label: 'Send by ${other.label} instead',
+                variant: GpButtonVariant.text,
+                size: GpButtonSize.compact,
+                expand: false,
+                onPressed: _busy
+                    ? null
+                    : () {
+                        _code.clear();
+                        _sendCode(other);
+                      },
+              ),
             ),
           ],
           const SizedBox(height: GpSpace.xxl),

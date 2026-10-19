@@ -84,7 +84,9 @@ class AtgConfig {
   static const fAppBuildNumber = 'appBuildNumber';
   static const fPlatform = 'platform';
 
+  // `channel` values from ATG's web client: its SMS and WhatsApp buttons.
   static const loginChannelSms = 'sms';
+  static const loginChannelWhatsApp = 'whatsapp';
 
   /// Identity the OTP calls report. These match the current ATG Android build
   /// (manifest versionName 28.2.2 / versionCode 280202).

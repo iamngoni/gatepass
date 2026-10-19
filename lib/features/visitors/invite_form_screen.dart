@@ -9,6 +9,7 @@ import '../../util/format.dart';
 import '../../widgets/common.dart';
 import '../../widgets/gate_pass.dart';
 import 'invite_actions.dart';
+import 'share_invite.dart';
 
 /// [initial] prefills the form, e.g. from a held quick tile.
 Future<void> openInviteForm(BuildContext context, {InviteDraft? initial}) =>
@@ -466,7 +467,6 @@ class InviteCreatedScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final site = AppScope.read(context).site;
     final first = invite.firstName;
 
     return GpScreen(
@@ -475,10 +475,12 @@ class InviteCreatedScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             GpButton(
-              label: 'Copy invite message',
+              label: 'Share invite',
               icon: GpIcons.share,
               size: GpButtonSize.large,
-              onPressed: () => shareInvite(context, invite, site.name),
+              onPressed: invite.code.isEmpty
+                  ? null
+                  : () => showShareOptions(context, invite),
             ),
             const SizedBox(height: GpSpace.sm),
             GpButton(
@@ -508,8 +510,8 @@ class InviteCreatedScreen extends StatelessWidget {
           ),
           const SizedBox(height: GpSpace.sm),
           Text(
-            'Send $first the invite message. Its link opens this same QR '
-            'code for the gate.',
+            'Share it with $first: the code, the link or a picture of this '
+            'QR all work at the gate.',
             style: context.type.body.copyWith(color: colors.inkMuted),
           ),
           const SizedBox(height: GpSpace.xl),

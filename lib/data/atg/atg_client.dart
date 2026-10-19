@@ -283,13 +283,15 @@ class AtgAuth {
 
   /// Sends the OTP. The body is ATG's own web-client shape: `loginString` and
   /// `channel` carry the identity, with device/app metadata alongside.
-  Future<void> startLogin(String phoneE164) async {
+  Future<void> startLogin(String phoneE164, {bool whatsApp = false}) async {
     await _http.send(
       'POST',
       Uri.parse('${AtgConfig.apiBase}${AtgConfig.loginStartPath}'),
       jsonBody: {
         AtgConfig.fLoginString: phoneE164,
-        AtgConfig.fChannel: AtgConfig.loginChannelSms,
+        AtgConfig.fChannel: whatsApp
+            ? AtgConfig.loginChannelWhatsApp
+            : AtgConfig.loginChannelSms,
         AtgConfig.fDeviceId: _deviceId,
         AtgConfig.fAppVersion: AtgConfig.appVersion,
         AtgConfig.fAppBuildNumber: AtgConfig.appBuildNumber,

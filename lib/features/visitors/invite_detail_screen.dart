@@ -7,6 +7,7 @@ import '../../util/format.dart';
 import '../../widgets/common.dart';
 import '../../widgets/gate_pass.dart';
 import 'invite_actions.dart';
+import 'share_invite.dart';
 
 class InviteDetailScreen extends StatelessWidget {
   const InviteDetailScreen({super.key, required this.inviteId});
@@ -115,10 +116,11 @@ class InviteDetailScreen extends StatelessWidget {
                   const SizedBox(width: GpSpace.sm),
                   Expanded(
                     child: GpButton(
-                      label: 'Copy invite',
+                      label: 'Share',
                       icon: GpIcons.share,
-                      onPressed: () =>
-                          shareInvite(context, invite, state.site.name),
+                      onPressed: invite.code.isEmpty
+                          ? null
+                          : () => showShareOptions(context, invite),
                     ),
                   ),
                 ],

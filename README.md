@@ -17,12 +17,17 @@ service's actual app icon. The app icon's source is `design/app-icon.svg`.
 - A scannable QR code on every live invite. It encodes the raw ATG access
   code, which is exactly what ATG's own visitor page encodes, so the guard's
   scanner reads it the same way.
+- Share any invite as the code, ATG's visitor link, a picture of the gate
+  pass, or (for people) a full invite message, through the phone's share
+  sheet.
 - A new invite needs only a full name and is valid all day today. More
   options sets another day, a number of hours, a mobile number or a car.
 - Notifications, with read state kept on the device because ATG has no per-item
   read flag.
-- Quick invite shortcuts for Uber, Bolt, Uber Eats, Mr D, Checkers Sixty60,
-  Pick n Pay asap!, Woolies Dash, Amazon, Takealot and Courier Guy.
+- Quick invite shortcuts for rides (Uber, Bolt, inDrive), food (Uber Eats,
+  Mr D, KFC, Debonairs), groceries and pharmacy (Checkers Sixty60, Pick n Pay
+  asap!, Woolies Dash, Zulzi, Clicks, Dis-Chem) and parcels (Amazon, Takealot,
+  Makro, SHEIN, Temu, Superbalist, Courier Guy, DHL, Aramex).
 
 ## What is deliberately absent
 
@@ -32,8 +37,8 @@ service's actual app icon. The app icon's source is `design/app-icon.svg`.
   returns `403`; the app does not invent arrival history or camera photos.
 - **No pre-screening, multi-entry or on-site timeline controls.** This create
   flow does not send those choices, so the app does not pretend they exist.
-- **No SMS delivery.** The app stores the optional mobile number and copies a
-  ready-to-send invitation message; it never claims to send an SMS.
+- **No SMS delivery.** The app stores the optional mobile number and hands
+  the invite to the share sheet; it never claims to send an SMS itself.
 
 See `lib/data/atg/README.md` for the verified API shapes and
 `docs/atg-api-endpoints.md` for the wider endpoint research.
@@ -45,4 +50,22 @@ flutter pub get
 flutter run
 ```
 
-Sign in with the mobile number your estate has on file; the OTP arrives by SMS.
+Sign in with the mobile number your estate has on file; the OTP arrives by SMS
+or WhatsApp.
+
+## Release
+
+Pushing a `v*` tag that matches the `version` in `pubspec.yaml` runs
+`.github/workflows/release.yml` on a self-hosted Linux x64 runner (labels
+`self-hosted`, `linux`, `x64`). It analyzes, tests, builds a signed APK and
+attaches it with its SHA-256 to the GitHub release.
+
+```bash
+git tag v0.1.0 && git push origin v0.1.0
+```
+
+Signing needs the `ANDROID_KEYSTORE_BASE64` and `ANDROID_KEYSTORE_PASSWORD`
+repository secrets (key alias `gatepass`). Local release builds read
+`android/key.properties` (gitignored) with `storeFile`, `storePassword`,
+`keyAlias` and `keyPassword`, and fall back to the debug key without it. Keep a
+backup of the keystore: Android only installs updates signed with the same key.

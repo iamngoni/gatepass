@@ -110,7 +110,10 @@ class AppState extends ChangeNotifier {
 
   Invite? inviteById(String id) => invites.where((i) => i.id == id).firstOrNull;
 
-  Future<void> requestCode(String phone) => _repo.requestCode(phone);
+  Future<void> requestCode(
+    String phone, {
+    OtpChannel channel = OtpChannel.sms,
+  }) => _repo.requestCode(phone, channel: channel);
 
   Future<void> signIn(String phone, String code) async {
     await _enter(await _repo.signIn(phone: phone, code: code));

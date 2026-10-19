@@ -40,7 +40,12 @@ abstract final class GpIcons {
   static const calendarCheck = LucideIcons.calendarCheck;
   static const keypad = LucideIcons.grid3x3;
   static const link = LucideIcons.link;
+  static const code = LucideIcons.hash;
+  static const image = LucideIcons.image;
+  static const message = LucideIcons.messageSquareText;
   static const phone = LucideIcons.phone;
+  static const sms = LucideIcons.messageSquare;
+  static const chat = LucideIcons.messageCircle;
   static const car = LucideIcons.car;
   static const arrivals = LucideIcons.logIn;
   static const departures = LucideIcons.logOut;

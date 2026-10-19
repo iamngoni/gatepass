@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The iOS artwork is full bleed with the mark well inside the safe zone, so
+     it works as the background layer on its own. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@mipmap/ic_launcher_background"/>
+    <foreground android:drawable="@android:color/transparent"/>
+</adaptive-icon>

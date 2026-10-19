@@ -105,8 +105,13 @@ class AtgGateRepository implements GateRepository {
   // --- sign in ---
 
   @override
-  Future<void> requestCode(String phone) =>
-      _auth.startLogin(_normalizeMobile(phone));
+  Future<void> requestCode(
+    String phone, {
+    OtpChannel channel = OtpChannel.sms,
+  }) => _auth.startLogin(
+    _normalizeMobile(phone),
+    whatsApp: channel == OtpChannel.whatsapp,
+  );
 
   @override
   Future<Resident?> restoreSession() async {

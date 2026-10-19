@@ -10,6 +10,7 @@ import '../../ui/ui.dart';
 import '../../util/format.dart';
 import '../../widgets/common.dart';
 import '../../widgets/gate_pass.dart';
+import 'share_invite.dart';
 
 /// A short, user-facing line for an error from the backend (e.g. the live
 /// ATG client's dry-run notice or a network failure).
@@ -94,13 +95,7 @@ class _QuickInviteSheetState extends State<QuickInviteSheet> {
   }
 
   Future<void> _copy() async {
-    final invite = _invite!;
-    final site = AppScope.read(context).site.name;
-    if (invite.isService) {
-      await copyGateCode(invite, site);
-    } else {
-      await shareInvite(context, invite, site, confirm: false);
-    }
+    await Clipboard.setData(ClipboardData(text: _invite!.code));
     if (!mounted) return;
     setState(() => _copied = true);
     _copiedReset?.cancel();
@@ -183,19 +178,29 @@ class _QuickInviteSheetState extends State<QuickInviteSheet> {
                     : null,
               ),
             const SizedBox(height: GpSpace.lg),
-            GpButton(
-              label: _copied
-                  ? (service != null ? 'Copied' : 'Invite copied')
-                  : service != null
-                  ? 'Copy code'
-                  : 'Copy invite message',
-              icon: _copied
-                  ? GpIcons.check
-                  : service != null
-                  ? GpIcons.copy
-                  : GpIcons.share,
-              size: GpButtonSize.large,
-              onPressed: ready ? _copy : null,
+            Row(
+              children: [
+                Expanded(
+                  child: GpButton(
+                    label: _copied ? 'Copied' : 'Copy code',
+                    icon: _copied ? GpIcons.check : GpIcons.copy,
+                    variant: GpButtonVariant.secondary,
+                    size: GpButtonSize.large,
+                    onPressed: ready && invite.code.isNotEmpty ? _copy : null,
+                  ),
+                ),
+                const SizedBox(width: GpSpace.sm),
+                Expanded(
+                  child: GpButton(
+                    label: 'Share',
+                    icon: GpIcons.share,
+                    size: GpButtonSize.large,
+                    onPressed: ready && invite.code.isNotEmpty
+                        ? () => showShareOptions(context, invite)
+                        : null,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: GpSpace.sm),
             Row(
@@ -245,33 +250,4 @@ Future<bool> confirmRevoke(BuildContext context, Invite invite) async {
     return false;
   }
   return true;
-}
-
-/// For a driver: just the code, which they read out or type at the gate.
-/// Shared raw, not grouped, so nobody types the spaces.
-Future<void> copyGateCode(Invite invite, String siteName) => Clipboard.setData(
-  ClipboardData(
-    text: invite.openEnded
-        ? 'Gate code for $siteName: ${invite.code}'
-        : 'Gate code for $siteName: ${invite.code} '
-              '(valid until ${formatTime(invite.until)})',
-  ),
-);
-
-/// Copies a ready-to-send message; the app does not send SMS itself.
-Future<void> shareInvite(
-  BuildContext context,
-  Invite invite,
-  String siteName, {
-  bool confirm = true,
-}) async {
-  // The link opens ATG's visitor page, which shows the same QR as the app.
-  final message =
-      'Hi ${invite.firstName}, you’re invited to $siteName '
-      '(${inviteValidityLabel(invite)}). '
-      'Show the QR code from this link at the gate: ${invite.link} '
-      '— or give the guard the access code ${invite.code}.';
-  await Clipboard.setData(ClipboardData(text: message));
-  if (!confirm || !context.mounted) return;
-  Toast.show(context, 'Invite copied. Paste it into WhatsApp or SMS.');
 }
