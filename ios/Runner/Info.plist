@@ -24,8 +24,12 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Gatepass saves gate pass pictures to Photos when you choose Save Image.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -66,7 +70,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Gatepass saves gate pass pictures to Photos when you choose Save Image.</string>
 </dict>
 </plist>
