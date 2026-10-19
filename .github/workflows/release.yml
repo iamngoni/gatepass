@@ -78,6 +78,21 @@ jobs:
           keyPassword=$KEYSTORE_PASSWORD
           EOF
 
+      # The local 8 GB Gradle heap starves a small runner container until it
+      # drops off GitHub, so CI uses a smaller heap and no daemons.
+      - name: Fit Gradle to the runner
+        run: |
+          free -h || true
+          cat /sys/fs/cgroup/memory.max 2>/dev/null || true
+          nproc
+          sed -i '/^org.gradle.jvmargs=/d' android/gradle.properties
+          cat >> android/gradle.properties <<EOF
+          org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=768m
+          org.gradle.daemon=false
+          org.gradle.workers.max=2
+          kotlin.compiler.execution.strategy=in-process
+          EOF
+
       - name: Build the APK
         run: |
           flutter build apk --release
