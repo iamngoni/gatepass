@@ -1,0 +1,32 @@
+name = "gatepass-backup"
+main = "build/worker/shim.mjs"
+compatibility_date = "2026-10-01"
+workers_dev = false
+
+[build]
+command = "cargo install -q worker-build && worker-build --release"
+
+[observability]
+enabled = true
+
+[[routes]]
+pattern = "gatepass.antonlabs.cc"
+custom_domain = true
+
+[[kv_namespaces]]
+binding = "BACKUPS"
+id = "afc0ed6998a54f678b46cd9c0d43a4d8"
+
+# 60 requests a minute per caller: by IP before the token is checked, by
+# account after.
+[[ratelimits]]
+name = "LIMITER"
+namespace_id = "4521"
+
+[ratelimits.simple]
+limit = 60
+period = 60
+
+[vars]
+# ATG's Firebase project: the app's sign-in tokens are issued for it.
+FIREBASE_PROJECT_ID = "helpful-data-424"

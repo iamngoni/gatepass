@@ -38,13 +38,15 @@ app keeps every invite it sees in the Keychain (iOS) or Keystore-backed storage
 Cloud backup is optional and end-to-end encrypted. Turning it on shows a
 12-word recovery phrase (BIP39 English words, 132 bits). The phone derives a key
 from it with Argon2id (19 MiB, 2 passes), seals the archive with AES-256-GCM
-bound to the account, and keeps only the derived key. The Worker in `cloud/`
+bound to the account, and keeps only the derived key. The Rust Worker in `cloud/`
 (`gatepass-backup` on Cloudflare at `gatepass.antonlabs.cc`, backed by KV) verifies the ATG Firebase ID
 token, stores one sealed blob per hashed uid, and rejects stale writes so
 phones merge before they upload. Without the phrase a backup can't be opened.
 
 ```bash
-cd cloud && npm install && npx wrangler deploy
+cd cloud
+cargo test && cargo clippy --target wasm32-unknown-unknown -- -D warnings
+wrangler deploy   # builds with worker-build
 ```
 
 ## What is deliberately absent
