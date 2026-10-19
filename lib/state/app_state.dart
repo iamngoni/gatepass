@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 
+import '../data/backup/cloud_backup.dart';
 import '../data/gate_repository.dart';
 import '../data/invite_archive.dart';
 import '../data/models.dart';
@@ -9,11 +10,16 @@ import '../data/services.dart';
 import '../ui/theme.dart';
 
 class AppState extends ChangeNotifier {
-  AppState(this._repo, {InviteArchive? archive})
+  AppState(this._repo, {InviteArchive? archive, this.backup})
     : _archive = archive ?? MemoryInviteArchive();
 
   final GateRepository _repo;
   final InviteArchive _archive;
+
+  /// End-to-end encrypted cloud copy of [invites]; null where unsupported.
+  final CloudBackup? backup;
+  bool backupOn = false;
+  Timer? _backupTimer;
 
   Resident? resident;
   Site? _site;
@@ -152,6 +158,7 @@ class AppState extends ChangeNotifier {
     invites = await _archive.load(who.id);
     restoring = false;
     notifyListeners();
+    unawaited(_startBackup());
     // Entering the app must not depend on the first data load: authenticated
     // endpoints may still be settling, and the tabs can retry on pull.
     try {
@@ -163,6 +170,8 @@ class AppState extends ChangeNotifier {
 
   /// The invite archive stays on the device for the next sign-in.
   void signOut() {
+    _backupTimer?.cancel();
+    backupOn = false;
     unawaited(_repo.signOut());
     resident = null;
     _site = null;
@@ -199,9 +208,67 @@ class AppState extends ChangeNotifier {
     await _saveInvites();
   }
 
-  Future<void> _saveInvites() async {
+  Future<void> _saveInvites({bool backUp = true}) async {
     final who = resident;
-    if (who != null) await _archive.save(who.id, invites);
+    if (who == null) return;
+    await _archive.save(who.id, invites);
+    if (backUp && backupOn) {
+      _backupTimer?.cancel();
+      _backupTimer = Timer(const Duration(seconds: 2), backUpNow);
+    }
+  }
+
+  Future<void> _startBackup() async {
+    final b = backup;
+    if (b == null) return;
+    try {
+      backupOn = await b.isOn();
+      notifyListeners();
+      if (backupOn) await backUpNow();
+    } on Object catch (e) {
+      reportBackupError(e);
+    }
+  }
+
+  /// Merges the cloud copy in and uploads the result.
+  Future<void> backUpNow({bool rethrowErrors = false}) async {
+    final b = backup;
+    if (b == null || !backupOn) return;
+    try {
+      final merged = await b.sync(invites);
+      if (merged != null) await _adoptBackup(merged);
+    } on Object catch (e) {
+      if (rethrowErrors) rethrow;
+      reportBackupError(e);
+    }
+  }
+
+  Future<void> _adoptBackup(List<Invite> merged) async {
+    invites = merged;
+    notifyListeners();
+    await _saveInvites(backUp: false);
+  }
+
+  Future<bool> hasCloudBackup() => backup!.hasRemote();
+
+  Future<void> turnOnBackup(List<String> phrase) async {
+    await _adoptBackup(await backup!.turnOn(phrase, invites));
+    backupOn = true;
+    notifyListeners();
+  }
+
+  /// Throws `BackupDecryptException` for the wrong phrase.
+  Future<void> restoreBackup(List<String> phrase) async {
+    await _adoptBackup(await backup!.restore(phrase, invites));
+    backupOn = true;
+    notifyListeners();
+  }
+
+  /// Deletes the cloud copy. The invites stay on this phone.
+  Future<void> turnOffBackup() async {
+    await backup!.turnOff();
+    backupOn = false;
+    notifyListeners();
   }
 
   Future<Invite> createInvite(InviteDraft draft) async {

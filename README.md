@@ -29,6 +29,24 @@ service's actual app icon. The app icon's source is `design/app-icon.svg`.
   asap!, Woolies Dash, Zulzi, Clicks, Dis-Chem) and parcels (Amazon, Takealot,
   Makro, SHEIN, Temu, Superbalist, Courier Guy, DHL, Aramex).
 
+## History and backup
+
+ATG deletes a visitor profile on revoke and lists only the latest 50, so the
+app keeps every invite it sees in the Keychain (iOS) or Keystore-backed storage
+(Android), per ATG account.
+
+Cloud backup is optional and end-to-end encrypted. Turning it on shows a
+12-word recovery phrase (BIP39 English words, 132 bits). The phone derives a key
+from it with Argon2id (19 MiB, 2 passes), seals the archive with AES-256-GCM
+bound to the account, and keeps only the derived key. The Worker in `cloud/`
+(`gatepass-backup` on Cloudflare, backed by KV) verifies the ATG Firebase ID
+token, stores one sealed blob per hashed uid, and rejects stale writes so
+phones merge before they upload. Without the phrase a backup can't be opened.
+
+```bash
+cd cloud && npm install && npx wrangler deploy
+```
+
 ## What is deliberately absent
 
 - **No resident QR pass.** Invites have QR codes; the resident's own pass is

@@ -165,6 +165,14 @@ class AtgGateRepository implements GateRepository {
   }
 
   @override
+  Future<CloudIdentity> cloudIdentity() async {
+    final headers = await _authHeaders();
+    final uid = _auth.session?.uid;
+    if (uid == null) throw AtgException('Not signed in.');
+    return (uid: uid, idToken: headers[AtgConfig.authHeader]!);
+  }
+
+  @override
   Future<void> signOut() async {
     _resident = null;
     _accountUid = null;

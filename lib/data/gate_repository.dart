@@ -14,6 +14,10 @@ enum OtpChannel {
   final String label;
 }
 
+/// Who the cloud backup is for: the Firebase uid and a fresh ID token the
+/// backup Worker verifies.
+typedef CloudIdentity = ({String uid, String idToken});
+
 /// The most invites [GateRepository.fetchInvites] returns. A shorter list is
 /// everything the backend has.
 const invitePageLimit = 50;
@@ -25,6 +29,8 @@ abstract interface class GateRepository {
   /// Resumes a previously stored session, returning the resident when the
   /// persisted refresh token is still valid. Null means sign-in is required.
   Future<Resident?> restoreSession();
+
+  Future<CloudIdentity> cloudIdentity();
 
   /// Forgets the stored session, so the next launch asks for a code again.
   Future<void> signOut();

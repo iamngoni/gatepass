@@ -53,4 +53,7 @@ abstract final class GpIcons {
   static const notice = LucideIcons.megaphone;
   static const property = LucideIcons.building2;
   static const appearance = LucideIcons.sunMoon;
+  static const cloud = LucideIcons.cloud;
+  static const cloudOn = LucideIcons.cloudCheck;
+  static const key = LucideIcons.keyRound;
 }

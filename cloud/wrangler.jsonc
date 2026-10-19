@@ -1,0 +1,14 @@
+{
+  "name": "gatepass-backup",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "kv_namespaces": [
+    { "binding": "BACKUPS", "id": "afc0ed6998a54f678b46cd9c0d43a4d8" }
+  ],
+  "vars": {
+    // ATG's Firebase project: the app's sign-in tokens are issued for it.
+    "FIREBASE_PROJECT_ID": "helpful-data-424"
+  },
+  "observability": { "enabled": true }
+}

@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import '../../state/app_state.dart';
 import '../../ui/ui.dart';
 import '../../widgets/common.dart';
+import 'backup_sheet.dart';
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
@@ -68,6 +69,24 @@ class AccountScreen extends StatelessWidget {
                   ),
                   title: site.name,
                   subtitle: propertyLine.isEmpty ? null : propertyLine,
+                ),
+              ],
+            ),
+          ),
+          const SectionHeading('Backup'),
+          padded(
+            GpGroup(
+              children: [
+                GpRow(
+                  leading: IconBadge(
+                    icon: state.backupOn ? GpIcons.cloudOn : GpIcons.cloud,
+                    size: 40,
+                    tone: state.backupOn ? Tone.accent : Tone.neutral,
+                  ),
+                  title: 'Cloud backup',
+                  subtitle: state.backupOn ? 'On, end-to-end encrypted' : 'Off',
+                  chevron: true,
+                  onTap: () => showBackupSheet(context),
                 ),
               ],
             ),

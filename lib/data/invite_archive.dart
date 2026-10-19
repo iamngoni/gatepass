@@ -121,3 +121,38 @@ List<Invite> mergeInvites(
   }
   return merged.values.toList();
 }
+
+/// Two archives of the same account, from different phones. Per invite, the
+/// later stage wins (revoked over expired over live) and missing details are
+/// filled from the other copy.
+List<Invite> unionInvites(List<Invite> a, List<Invite> b) {
+  final merged = {for (final i in a) i.id: i};
+  for (final other in b) {
+    final mine = merged[other.id];
+    if (mine == null) {
+      merged[other.id] = other;
+      continue;
+    }
+    final base = other.status.index > mine.status.index ? other : mine;
+    final rest = identical(base, mine) ? other : mine;
+    merged[other.id] = Invite(
+      id: base.id,
+      siteId: base.siteId,
+      visitorName: base.visitorName.isEmpty
+          ? rest.visitorName
+          : base.visitorName,
+      serviceId: base.serviceId ?? rest.serviceId,
+      phone: base.phone ?? rest.phone,
+      vehicleReg: base.vehicleReg ?? rest.vehicleReg,
+      from: base.from,
+      until: base.until,
+      status: base.status,
+      code: base.code.isEmpty ? rest.code : base.code,
+      link: base.link.isEmpty ? rest.link : base.link,
+      createdAt: base.createdAt,
+      openEnded: base.openEnded,
+      windowText: base.windowText ?? rest.windowText,
+    );
+  }
+  return merged.values.toList();
+}
