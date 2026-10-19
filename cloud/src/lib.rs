@@ -3,7 +3,7 @@
 //! The app seals the blob on the phone with a key from the resident's
 //! recovery phrase, so this Worker only ever stores ciphertext. Requests carry
 //! the resident's ATG (Firebase) ID token; handlers below only run with a
-//! [`auth::VerifiedAccount`], and storage is keyed by its hashed uid.
+//! [`auth::VerifiedAccount`], and storage (D1) is keyed by its hashed uid.
 
 mod auth;
 mod backup;
@@ -12,9 +12,12 @@ mod error;
 use std::cell::RefCell;
 
 use auth::{KeySet, VerifiedAccount};
-use backup::{PutRequest, Stored};
+use backup::{PutRequest, Stored, Write};
 use error::ApiError;
-use worker::{Context, Date, Env, Fetch, Method, Request, Response, Result, event, kv::KvStore};
+use worker::{
+    Context, D1Database, Date, Env, Fetch, Method, Request, Response, Result, event,
+    wasm_bindgen::JsValue,
+};
 
 thread_local! {
     /// Google's keys and when they go stale (ms since epoch). Isolate-local.
@@ -46,63 +49,98 @@ async fn handle(mut req: Request, env: &Env) -> std::result::Result<Response, Ap
     let account = authenticate(&req, env).await?;
     limit(env, format!("uid:{}", account.storage_key())).await?;
 
-    let kv = env.kv("BACKUPS").map_err(internal("kv binding"))?;
+    let db = env.d1("DB").map_err(internal("d1 binding"))?;
     match req.method() {
-        Method::Get => get(&kv, &account).await,
+        Method::Get => get(&db, &account).await,
         Method::Put => {
             let body = req.bytes().await.map_err(|_| ApiError::BadJson)?;
-            put(&kv, &account, PutRequest::parse(&body)?).await
+            put(&db, &account, PutRequest::parse(&body)?).await
         }
-        Method::Delete => delete(&kv, &account).await,
+        Method::Delete => delete(&db, &account).await,
         _ => Err(ApiError::MethodNotAllowed),
     }
 }
 
-async fn get(kv: &KvStore, account: &VerifiedAccount) -> std::result::Result<Response, ApiError> {
-    let stored = read(kv, account).await?.ok_or(ApiError::NoBackup)?;
+async fn get(
+    db: &D1Database,
+    account: &VerifiedAccount,
+) -> std::result::Result<Response, ApiError> {
+    let stored = read(db, account).await?.ok_or(ApiError::NoBackup)?;
     respond(&stored, 200).map_err(internal("respond"))
 }
 
+/// Writes only if the stored version is still the one the phone read. The
+/// condition is part of the statement, so two concurrent writes can't both
+/// succeed.
 async fn put(
-    kv: &KvStore,
+    db: &D1Database,
     account: &VerifiedAccount,
     request: PutRequest,
 ) -> std::result::Result<Response, ApiError> {
-    let current = read(kv, account).await?;
-    let now = Date::now().to_string();
-    let next: Stored = request.apply(current.as_ref(), now)?;
-    kv.put(account.storage_key(), &next)
-        .map_err(internal("kv put"))?
-        .execute()
+    let now: String = worker::js_sys::Date::new_0().to_iso_string().into();
+    let write = request.into_write(now);
+    let key = JsValue::from(account.storage_key());
+    let statement = match &write {
+        Write::Insert { updated_at, blob } => {
+            db.prepare(Write::INSERT_SQL)
+                .bind(&[key, updated_at.into(), blob.into()])
+        }
+        Write::Update {
+            expected,
+            updated_at,
+            blob,
+        } => db.prepare(Write::UPDATE_SQL).bind(&[
+            key,
+            updated_at.into(),
+            blob.into(),
+            JsValue::from(*expected as f64),
+        ]),
+    }
+    .map_err(internal("d1 bind"))?;
+    let changes = statement
+        .run()
         .await
-        .map_err(internal("kv put"))?;
+        .map_err(internal("d1 write"))?
+        .meta()
+        .map_err(internal("d1 meta"))?
+        .and_then(|m| m.changes)
+        .unwrap_or(0);
+    if changes == 0 {
+        let version = read(db, account).await?.map_or(0, |s| s.version);
+        return Err(ApiError::Conflict { version });
+    }
     respond(
-        &serde_json::json!({ "version": next.version, "updatedAt": next.updated_at }),
+        &serde_json::json!({ "version": write.next_version(), "updatedAt": write.updated_at() }),
         200,
     )
     .map_err(internal("respond"))
 }
 
 async fn delete(
-    kv: &KvStore,
+    db: &D1Database,
     account: &VerifiedAccount,
 ) -> std::result::Result<Response, ApiError> {
-    kv.delete(account.storage_key())
+    db.prepare("DELETE FROM backups WHERE account = ?1")
+        .bind(&[account.storage_key().into()])
+        .map_err(internal("d1 bind"))?
+        .run()
         .await
-        .map_err(internal("kv delete"))?;
+        .map_err(internal("d1 delete"))?;
     Ok(Response::empty()
         .map_err(internal("respond"))?
         .with_status(204))
 }
 
 async fn read(
-    kv: &KvStore,
+    db: &D1Database,
     account: &VerifiedAccount,
 ) -> std::result::Result<Option<Stored>, ApiError> {
-    kv.get(account.storage_key())
-        .json::<Stored>()
+    db.prepare("SELECT version, updated_at AS updatedAt, blob FROM backups WHERE account = ?1")
+        .bind(&[account.storage_key().into()])
+        .map_err(internal("d1 bind"))?
+        .first::<Stored>(None)
         .await
-        .map_err(internal("kv get"))
+        .map_err(internal("d1 read"))
 }
 
 async fn authenticate(req: &Request, env: &Env) -> std::result::Result<VerifiedAccount, ApiError> {

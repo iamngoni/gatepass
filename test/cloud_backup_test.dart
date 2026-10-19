@@ -26,6 +26,15 @@ Invite _invite(String id, {InviteStatus status = InviteStatus.active}) {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('the Worker\'s GET body parses, timestamp included', () {
+    final remote = parseRemoteBackup(
+      '{"version":2,"updatedAt":"2026-10-19T14:00:27.000Z","blob":"{}"}',
+    );
+    expect(remote.version, 2);
+    expect(remote.updatedAt, DateTime.utc(2026, 10, 19, 14, 0, 27));
+    expect(remote.blob, '{}');
+  });
+
   test('a new phrase is 12 known words and parses back', () async {
     final phrase = await newRecoveryPhrase();
     expect(phrase, hasLength(12));

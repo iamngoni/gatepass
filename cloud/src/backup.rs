@@ -3,7 +3,8 @@
 //! The blob is opaque ciphertext sealed on the phone; this module never looks
 //! inside it, only bounds its size. A write must name the version it read, so
 //! two phones can't silently overwrite each other: the second one gets a
-//! conflict, merges, and retries.
+//! conflict, merges, and retries. The check itself runs in SQL (see
+//! [`Write`]) so it is atomic.
 
 use serde::{Deserialize, Serialize};
 
@@ -66,18 +67,54 @@ impl PutRequest {
         })
     }
 
-    /// The record to store next, or a conflict carrying the current version
-    /// when another device wrote since this one read.
-    pub fn apply(self, current: Option<&Stored>, now: String) -> Result<Stored, ApiError> {
-        let version = current.map_or(0, |s| s.version);
-        if self.expected_version != version {
-            return Err(ApiError::Conflict { version });
+    /// The statement that stores this write, conditional on the version.
+    pub fn into_write(self, updated_at: String) -> Write {
+        match self.expected_version {
+            0 => Write::Insert {
+                updated_at,
+                blob: self.blob.0,
+            },
+            expected => Write::Update {
+                expected,
+                updated_at,
+                blob: self.blob.0,
+            },
         }
-        Ok(Stored {
-            version: version + 1,
-            updated_at: now,
-            blob: self.blob.0,
-        })
+    }
+}
+
+/// A conditional write. It changes no row when another device wrote first;
+/// the caller then reports [`ApiError::Conflict`] with the current version.
+#[derive(Debug, PartialEq, Eq)]
+pub enum Write {
+    /// The first backup for this account.
+    Insert { updated_at: String, blob: String },
+    /// Replaces version `expected`, and only that version.
+    Update {
+        expected: u64,
+        updated_at: String,
+        blob: String,
+    },
+}
+
+impl Write {
+    pub const INSERT_SQL: &str = "INSERT INTO backups (account, version, updated_at, blob) \
+         VALUES (?1, 1, ?2, ?3) ON CONFLICT (account) DO NOTHING";
+    pub const UPDATE_SQL: &str = "UPDATE backups SET version = version + 1, updated_at = ?2, blob = ?3 \
+         WHERE account = ?1 AND version = ?4";
+
+    /// The version the record has after this write succeeds.
+    pub fn next_version(&self) -> u64 {
+        match self {
+            Self::Insert { .. } => 1,
+            Self::Update { expected, .. } => expected + 1,
+        }
+    }
+
+    pub fn updated_at(&self) -> &str {
+        match self {
+            Self::Insert { updated_at, .. } | Self::Update { updated_at, .. } => updated_at,
+        }
     }
 }
 
@@ -95,31 +132,34 @@ mod tests {
     }
 
     #[test]
-    fn the_first_write_starts_at_version_one() {
-        let stored = put(0, "sealed").apply(None, "t1".into()).expect("ok");
+    fn the_first_write_inserts_version_one() {
+        let write = put(0, "sealed").into_write("t1".into());
         assert_eq!(
-            stored,
-            Stored {
-                version: 1,
+            write,
+            Write::Insert {
                 updated_at: "t1".into(),
                 blob: "sealed".into()
             }
         );
+        assert_eq!(write.next_version(), 1);
+        assert_eq!(write.updated_at(), "t1");
     }
 
     #[test]
-    fn a_stale_write_is_a_conflict_with_the_current_version() {
-        let current = put(0, "a").apply(None, "t1".into()).expect("ok");
-        let next = put(1, "b").apply(Some(&current), "t2".into()).expect("ok");
-        assert_eq!(next.version, 2);
+    fn later_writes_replace_only_the_version_they_read() {
+        let write = put(4, "b").into_write("t2".into());
         assert_eq!(
-            put(1, "c").apply(Some(&next), "t3".into()).err(),
-            Some(ApiError::Conflict { version: 2 })
+            write,
+            Write::Update {
+                expected: 4,
+                updated_at: "t2".into(),
+                blob: "b".into()
+            }
         );
-        assert_eq!(
-            put(1, "c").apply(None, "t3".into()).err(),
-            Some(ApiError::Conflict { version: 0 })
-        );
+        assert_eq!(write.next_version(), 5);
+        assert_eq!(write.updated_at(), "t2");
+        assert!(Write::UPDATE_SQL.contains("AND version = ?4"));
+        assert!(Write::INSERT_SQL.contains("DO NOTHING"));
     }
 
     #[test]

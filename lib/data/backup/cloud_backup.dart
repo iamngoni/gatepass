@@ -56,12 +56,7 @@ class WorkerBackupStore implements BackupStore {
     final (status, text) = await _send('GET', idToken);
     if (status == 404) return null;
     if (status != 200) throw HttpException('Backup unavailable ($status)');
-    final j = jsonDecode(text) as Map;
-    return (
-      version: j['version'] as int,
-      blob: j['blob'] as String,
-      updatedAt: DateTime.parse(j['updatedAt'] as String),
-    );
+    return parseRemoteBackup(text);
   }
 
   @override
@@ -80,6 +75,16 @@ class WorkerBackupStore implements BackupStore {
     final (status, _) = await _send('DELETE', idToken);
     if (status != 204) throw HttpException('Backup not deleted ($status)');
   }
+}
+
+/// The Worker's `GET` body: `{version, updatedAt (ISO 8601), blob}`.
+RemoteBackup parseRemoteBackup(String body) {
+  final j = jsonDecode(body) as Map;
+  return (
+    version: j['version'] as int,
+    blob: j['blob'] as String,
+    updatedAt: DateTime.parse(j['updatedAt'] as String),
+  );
 }
 
 class MemoryBackupStore implements BackupStore {
