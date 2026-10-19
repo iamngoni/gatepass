@@ -7,22 +7,40 @@ environment:
   sdk: ^3.12.2
 
 dependencies:
+  bloc: ^9.0.1
+  bloc_concurrency: ^0.3.0
   crypto: ^3.0.7
   cryptography: ^2.9.0
+  dartz: ^0.10.1
+  dio: ^5.9.0
   flutter:
     sdk: flutter
+  flutter_bloc: ^9.1.1
+  flutter_localizations:
+    sdk: flutter
   flutter_secure_storage: ^11.2.0
-  intl: ^0.20.3
+  freezed_annotation: ^3.1.0
+  get_it: ^9.2.0
+  injectable: ^2.7.1+2
+  intl: ^0.20.2
+  json_annotation: ^4.9.0
   lucide_icons_flutter: 3.1.15
   qr: ^3.0.2
   share_plus: ^13.3.1
 
 dev_dependencies:
+  bloc_test: ^10.0.0
+  build_runner: ^2.10.0
   flutter_test:
     sdk: flutter
-  flutter_lints: ^6.0.0
+  freezed: 3.2.3
+  injectable_generator: 2.9.1
+  json_serializable: 6.11.2
+  mocktail: ^1.0.5
+  very_good_analysis: ^10.2.0
 
 flutter:
+  generate: true
   assets:
     - assets/backup/
     - assets/brand/
