@@ -31,8 +31,7 @@ abstract interface class BackupStore {
 class WorkerBackupStore implements BackupStore {
   WorkerBackupStore([Uri? endpoint])
     : _endpoint =
-          endpoint ??
-          Uri.parse('https://gatepass-backup.imngonii.workers.dev/v1/backup');
+          endpoint ?? Uri.parse('https://gatepass.antonlabs.cc/v1/backup');
 
   final Uri _endpoint;
   final _client = HttpClient()..connectionTimeout = const Duration(seconds: 15);
