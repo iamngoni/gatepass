@@ -1,19 +1,2 @@
-// Gatepass's own component kit. Screens import this instead of Material.
-export 'activity.dart';
-export 'button.dart';
-export 'controls.dart';
-export 'dialog.dart';
-export 'empty_panel.dart';
-export 'feedback.dart';
-export 'field.dart';
-export 'icons.dart';
-export 'pickers.dart';
-export 'pressable.dart';
-export 'qr.dart';
-export 'refresh.dart';
-export 'route.dart';
-export 'screen.dart';
-export 'sheet.dart';
-export 'surface.dart';
-export 'tab_bar.dart';
-export 'theme.dart';
+// Compatibility shim: moved to lib/core. Import the new location instead.
+export '../core/views/widgets/gp_widgets.dart';
