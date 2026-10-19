@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:dartz/dartz.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gatepass/auth/models/data/account_session.dart';
 import 'package:gatepass/auth/models/data/cloud_identity.dart';
@@ -44,6 +45,9 @@ class FakeGate
   final AccountSession account;
   final List<Invite> invites;
   List<AppNotification> notifications = [];
+
+  /// The code ATG gives each new invite.
+  String newCode = 'ATGM2UAZALP0';
 
   /// Completes the launch restore; null means nothing was stored.
   final restore = Completer<AccountSession?>();
@@ -98,8 +102,8 @@ class FakeGate
       from: draft.from,
       until: draft.until,
       status: InviteStatus.active,
-      code: 'ATGM2UAZALP0',
-      link: 'https://new.atthegate.biz/visitor/shared?code=ATGM2UAZALP0',
+      code: newCode,
+      link: 'https://new.atthegate.biz/visitor/shared?code=$newCode',
       createdAt: DateTime.now(),
     );
     invites.add(invite);
@@ -185,6 +189,7 @@ Future<void> pumpGatepass(
   FakeGate gate, {
   MemoryArchive? archive,
   bool signedIn = false,
+  Widget Function(Widget app)? wrap,
 }) async {
   tester.view.physicalSize = const Size(402 * 3, 874 * 3);
   tester.view.devicePixelRatio = 3;
@@ -205,6 +210,7 @@ Future<void> pumpGatepass(
     ..registerLazySingleton(() => NotificationsBloc(gate))
     ..registerLazySingleton(() => BackupBloc(backup, backup))
     ..registerLazySingleton(AppearanceBloc.new);
-  await tester.pumpWidget(const GatepassProviders());
+  const app = GatepassProviders();
+  await tester.pumpWidget(wrap == null ? app : wrap(app));
   await tester.pump();
 }

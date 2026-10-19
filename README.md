@@ -60,8 +60,22 @@ wrangler deploy   # builds with worker-build
 - **No SMS delivery.** The app stores the optional mobile number and hands
   the invite to the share sheet; it never claims to send an SMS itself.
 
-See `lib/data/atg/README.md` for the verified API shapes and
+See `docs/ATG.md` for the verified API shapes and
 `docs/atg-api-endpoints.md` for the wider endpoint research.
+
+## Code
+
+Feature folders under `lib/` (`auth`, `invites`, `notifications`, `backup`,
+`home`, `account`) each hold `models/{data,dto,repos}`, `state/<bloc>` and
+`views/{pages,widgets}`; shared code is in `lib/core`. BLoCs over injected
+repositories that return `Either<ApplicationError, T>`, Freezed models,
+GetIt/Injectable, Dio, and every string in `lib/l10n/arb/app_en.arb`. After
+changing a model, BLoC or ARB file:
+
+```bash
+dart run build_runner build
+flutter gen-l10n
+```
 
 ## Run
 
