@@ -1,21 +1,23 @@
+// Gatepass — app.dart. Created 2026-10-18.
 // The app root is a WidgetsApp, the unstyled foundation: Gatepass's own
 // tokens, type and routes, with no MaterialApp or ThemeData underneath.
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'features/account/account_screen.dart';
-import 'features/auth/sign_in_screen.dart';
-import 'features/home/home_screen.dart';
-import 'features/visitors/invite_form_screen.dart';
-import 'features/visitors/visitors_screen.dart';
-import 'state/app_state.dart';
-import 'ui/ui.dart';
+import 'auth/state/session/session_bloc.dart';
+import 'auth/views/pages/launch_page.dart';
+import 'auth/views/pages/sign_in_page.dart';
+import 'core/state/appearance/appearance_bloc.dart';
+import 'core/views/widgets/gp_widgets.dart';
+import 'home/views/pages/home_shell_page.dart';
+import 'invites/state/invites/invites_bloc.dart';
+import 'l10n/generated/app_localizations.dart';
+import 'notifications/state/notifications/notifications_bloc.dart';
 
 class GatepassApp extends StatefulWidget {
-  const GatepassApp({super.key, required this.state});
-
-  final AppState state;
+  const GatepassApp({super.key});
 
   @override
   State<GatepassApp> createState() => _GatepassAppState();
@@ -27,145 +29,65 @@ class _GatepassAppState extends State<GatepassApp> {
   @override
   void reassemble() {
     super.reassemble();
-    if (kDebugMode && widget.state.signedIn) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) widget.state.refresh();
-      });
-    }
+    if (!kDebugMode) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<InvitesBloc>().add(const InvitesEvent.refreshRequested());
+      context.read<NotificationsBloc>().add(
+        const NotificationsEvent.refreshRequested(),
+      );
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = widget.state;
-    return AppScope(
-      state: state,
-      child: ListenableBuilder(
-        listenable: state,
-        builder: (context, _) => WidgetsApp(
-          title: 'Gatepass',
-          debugShowCheckedModeBanner: false,
-          color: GpColors.brand,
-          pageRouteBuilder: <T>(settings, builder) =>
-              GpPageRoute<T>(builder: builder, settings: settings),
-          builder: (context, child) {
-            final theme = switch (state.appearance) {
-              Appearance.light => GpThemeData.light,
-              Appearance.dark => GpThemeData.dark,
-              Appearance.system =>
-                MediaQuery.platformBrightnessOf(context) == Brightness.dark
-                    ? GpThemeData.dark
-                    : GpThemeData.light,
-            };
-            return GpTheme(
-              data: theme,
-              child: Builder(
-                builder: (context) => DefaultTextStyle(
-                  style: context.type.body,
-                  child: IconTheme(
-                    data: IconThemeData(color: theme.colors.ink, size: 22),
-                    child: AnnotatedRegion<SystemUiOverlayStyle>(
-                      value: theme.isDark
-                          ? SystemUiOverlayStyle.light
-                          : SystemUiOverlayStyle.dark,
-                      child: ColoredBox(
-                        color: theme.colors.canvas,
-                        child: ToastHost(child: child ?? const SizedBox()),
-                      ),
-                    ),
+    final appearance = context.select(
+      (AppearanceBloc bloc) => bloc.state.appearance,
+    );
+    final session = context.watch<SessionBloc>().state;
+    return WidgetsApp(
+      onGenerateTitle: (context) => context.l10n.appTitle,
+      debugShowCheckedModeBanner: false,
+      color: GpColors.brand,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      pageRouteBuilder: <T>(settings, builder) =>
+          GpPageRoute<T>(builder: builder, settings: settings),
+      builder: (context, child) {
+        final theme = switch (appearance) {
+          Appearance.light => GpThemeData.light,
+          Appearance.dark => GpThemeData.dark,
+          Appearance.system =>
+            MediaQuery.platformBrightnessOf(context) == Brightness.dark
+                ? GpThemeData.dark
+                : GpThemeData.light,
+        };
+        return GpTheme(
+          data: theme,
+          child: Builder(
+            builder: (context) => DefaultTextStyle(
+              style: context.type.body,
+              child: IconTheme(
+                data: IconThemeData(color: theme.colors.ink, size: 22),
+                child: AnnotatedRegion<SystemUiOverlayStyle>(
+                  value: theme.isDark
+                      ? SystemUiOverlayStyle.light
+                      : SystemUiOverlayStyle.dark,
+                  child: ColoredBox(
+                    color: theme.colors.canvas,
+                    child: ToastHost(child: child ?? const SizedBox()),
                   ),
                 ),
               ),
-            );
-          },
-          home: state.signedIn
-              ? const HomeShell()
-              : state.restoring
-              ? const _Launch()
-              : const SignInScreen(),
-        ),
-      ),
-    );
-  }
-}
-
-/// Shown while a saved session is checked, in place of the sign-in screen.
-class _Launch extends StatelessWidget {
-  const _Launch();
-
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(GpRadius.lg),
-          child: Image.asset(
-            'assets/brand/gatepass-mark.png',
-            width: 72,
-            height: 72,
-            semanticLabel: 'Gatepass',
-          ),
-        ),
-        const SizedBox(height: GpSpace.xl),
-        GpActivity(color: context.colors.inkMuted),
-      ],
-    ),
-  );
-}
-
-class HomeShell extends StatefulWidget {
-  const HomeShell({super.key});
-
-  @override
-  State<HomeShell> createState() => _HomeShellState();
-}
-
-class _HomeShellState extends State<HomeShell> {
-  int _index = 0;
-
-  void _go(int index) => setState(() => _index = index);
-
-  static const _tabs = [
-    GpTab(GpIcons.home, 'Home'),
-    GpTab(GpIcons.visitors, 'Visitors'),
-    GpTab(GpIcons.account, 'Account'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final media = MediaQuery.of(context);
-    // Pages scroll under the floating bar; their lists end with scrollEnd()
-    // so the last row clears it.
-    return Stack(
-      children: [
-        MediaQuery(
-          data: media.copyWith(
-            padding: media.padding.copyWith(
-              bottom: GpTabBar.extent(media.padding.bottom),
             ),
           ),
-          child: IndexedStack(
-            index: _index,
-            children: [
-              HomeScreen(onOpenTab: _go),
-              const VisitorsScreen(),
-              const AccountScreen(),
-            ],
-          ),
-        ),
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: GpTabBar(
-            tabs: _tabs,
-            selectedIndex: _index,
-            onSelect: _go,
-            addLabel: 'Invite someone',
-            onAdd: () => openInviteForm(context),
-          ),
-        ),
-      ],
+        );
+      },
+      home: switch (session) {
+        SessionSignedInState() => const HomeShellPage(),
+        SessionRestoringState() => const LaunchPage(),
+        SessionSignedOutState() => const SignInPage(),
+      },
     );
   }
 }

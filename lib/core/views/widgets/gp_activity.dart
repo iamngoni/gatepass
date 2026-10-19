@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 
 import '../../utils/extensions/build_context_extensions.dart';
+import '../../utils/extensions/localization_extensions.dart';
 
 /// A thin rotating arc while work is pending. Holds still when the phone
 /// asks for reduced motion.
@@ -48,7 +49,7 @@ class _GpActivityState extends State<GpActivity>
 
   @override
   Widget build(BuildContext context) => Semantics(
-    label: 'Loading',
+    label: context.l10n.commonLoading,
     liveRegion: true,
     child: SizedBox.square(
       dimension: widget.size,

@@ -5,6 +5,7 @@ import '../../configs/gp_icons.dart';
 import '../../configs/gp_spacing.dart';
 import '../../configs/gp_type.dart';
 import '../../utils/extensions/build_context_extensions.dart';
+import '../../utils/extensions/localization_extensions.dart';
 import 'gp_icon_button.dart';
 
 /// A plain bar: a back chevron (or a close cross on a page that slid up), a
@@ -36,7 +37,9 @@ class GpHeader extends StatelessWidget {
           leading: showBack && canPop
               ? GpIconButton(
                   icon: modal ? GpIcons.close : GpIcons.chevronLeft,
-                  label: modal ? 'Close' : 'Back',
+                  label: modal
+                      ? context.l10n.commonClose
+                      : context.l10n.commonBack,
                   onPressed: onBack ?? () => Navigator.of(context).maybePop(),
                 )
               : null,

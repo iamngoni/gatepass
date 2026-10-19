@@ -8,6 +8,7 @@ import '../../configs/gp_icons.dart';
 import '../../configs/gp_spacing.dart';
 import '../../utils/date_helpers.dart';
 import '../../utils/extensions/build_context_extensions.dart';
+import '../../utils/extensions/localization_extensions.dart';
 import 'day_picker_cell.dart';
 import 'gp_icon_button.dart';
 import 'gp_sheet_route.dart';
@@ -93,13 +94,13 @@ class _DayPickerSheetState extends State<DayPickerSheet> {
                 ),
                 GpIconButton(
                   icon: GpIcons.chevronLeft,
-                  label: 'Previous month',
+                  label: context.l10n.commonPreviousMonth,
                   color: canGoBack ? colors.ink : colors.disabledInk,
                   onPressed: canGoBack ? showPreviousMonth : null,
                 ),
                 GpIconButton(
                   icon: GpIcons.chevronRight,
-                  label: 'Next month',
+                  label: context.l10n.commonNextMonth,
                   color: canGoForward ? colors.ink : colors.disabledInk,
                   onPressed: canGoForward ? showNextMonth : null,
                 ),

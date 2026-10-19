@@ -13,9 +13,9 @@
 ///  - Revoke transport: VERIFIED live — the id must be a form/query parameter,
 ///    a JSON body is ignored.
 ///
-/// `AtgConfig.dryRunWrites` is OFF: create and revoke were each verified live against a
-/// throwaway invite and then reverted. Set it back to `true` if the API shapes
-/// change, so a wrong body cannot reach the estate.
+/// `AtgConfig.dryRunWrites` is OFF: create and revoke were each verified
+/// live against a throwaway invite and then reverted. Set it back to `true`
+/// if the API shapes change, so a wrong body cannot reach the estate.
 library;
 
 class AtgConfig {

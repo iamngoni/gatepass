@@ -18,6 +18,8 @@ import 'package:injectable/injectable.dart' as _i526;
 
 import 'auth/models/repos/abs/auth_repository.dart' as _i931;
 import 'auth/models/repos/impl/dio_auth_repository.dart' as _i76;
+import 'auth/state/session/session_bloc.dart' as _i820;
+import 'auth/state/sign_in/sign_in_bloc.dart' as _i262;
 import 'backup/models/data/kdf_params.dart' as _i79;
 import 'backup/models/repos/abs/backup_repository.dart' as _i486;
 import 'backup/models/repos/abs/backup_store_repository.dart' as _i878;
@@ -26,21 +28,25 @@ import 'backup/models/repos/impl/asset_recovery_phrase_repository.dart'
     as _i340;
 import 'backup/models/repos/impl/cloud_backup_repository.dart' as _i382;
 import 'backup/models/repos/impl/dio_backup_store_repository.dart' as _i461;
+import 'backup/state/backup/backup_bloc.dart' as _i188;
 import 'core/services/atg_account_service.dart' as _i516;
 import 'core/services/atg_session_service.dart' as _i584;
 import 'core/services/backup_cipher_service.dart' as _i589;
 import 'core/services/device_id_service.dart' as _i1064;
 import 'core/services/secure_storage_service.dart' as _i493;
 import 'core/services/seen_notifications_service.dart' as _i277;
+import 'core/state/appearance/appearance_bloc.dart' as _i551;
 import 'injection.dart' as _i464;
 import 'invites/models/repos/abs/invite_archive_repository.dart' as _i888;
 import 'invites/models/repos/abs/invite_repository.dart' as _i1002;
 import 'invites/models/repos/impl/dio_invite_repository.dart' as _i520;
 import 'invites/models/repos/impl/secure_invite_archive_repository.dart'
     as _i66;
+import 'invites/state/invites/invites_bloc.dart' as _i218;
 import 'notifications/models/repos/abs/notification_repository.dart' as _i367;
 import 'notifications/models/repos/impl/dio_notification_repository.dart'
     as _i716;
+import 'notifications/state/notifications/notifications_bloc.dart' as _i1033;
 
 extension GetItInjectableX on _i174.GetIt {
   // initializes the registration of main-scope dependencies inside of GetIt
@@ -57,6 +63,7 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i277.SeenNotificationsService>(
       () => _i277.SeenNotificationsService(),
     );
+    gh.lazySingleton<_i551.AppearanceBloc>(() => _i551.AppearanceBloc());
     gh.lazySingleton<_i558.FlutterSecureStorage>(
       () => serviceModule.secureStorage,
     );
@@ -100,6 +107,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i277.SeenNotificationsService>(),
       ),
     );
+    gh.lazySingleton<_i1033.NotificationsBloc>(
+      () => _i1033.NotificationsBloc(gh<_i367.NotificationRepository>()),
+    );
     gh.lazySingleton<_i516.AtgAccountService>(
       () => _i516.AtgAccountService(
         gh<_i361.Dio>(instanceName: 'atg'),
@@ -127,6 +137,24 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i520.DioInviteRepository(
         gh<_i361.Dio>(instanceName: 'atg'),
         gh<_i516.AtgAccountService>(),
+      ),
+    );
+    gh.lazySingleton<_i188.BackupBloc>(
+      () => _i188.BackupBloc(
+        gh<_i486.BackupRepository>(),
+        gh<_i296.RecoveryPhraseRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i820.SessionBloc>(
+      () => _i820.SessionBloc(gh<_i931.AuthRepository>()),
+    );
+    gh.factory<_i262.SignInBloc>(
+      () => _i262.SignInBloc(gh<_i931.AuthRepository>()),
+    );
+    gh.lazySingleton<_i218.InvitesBloc>(
+      () => _i218.InvitesBloc(
+        gh<_i1002.InviteRepository>(),
+        gh<_i888.InviteArchiveRepository>(),
       ),
     );
     return this;

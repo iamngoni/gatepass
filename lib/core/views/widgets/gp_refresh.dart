@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../configs/gp_motion.dart';
+import '../../utils/extensions/localization_extensions.dart';
 import 'gp_activity.dart';
 
 class GpRefresh extends StatefulWidget {
@@ -93,7 +94,7 @@ class _GpRefreshState extends State<GpRefresh> {
         // offered as an action.
         child: Semantics(
           customSemanticsActions: {
-            const CustomSemanticsAction(label: 'Refresh'): refresh,
+            CustomSemanticsAction(label: context.l10n.commonRefresh): refresh,
           },
           child: ValueListenableBuilder<bool>(
             valueListenable: refreshing,

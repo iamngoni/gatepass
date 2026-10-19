@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 
 import '../../configs/gp_spacing.dart';
 import '../../utils/extensions/build_context_extensions.dart';
+import '../../utils/extensions/localization_extensions.dart';
 import 'gp_button.dart';
 import 'gp_sheet_route.dart';
 import 'time_wheel.dart';
@@ -102,7 +103,7 @@ class _TimePickerSheetState extends State<TimePickerSheet> {
           ),
           const SizedBox(height: GpSpace.lg),
           GpButton(
-            label: 'Set time',
+            label: context.l10n.commonSetTime,
             onPressed: () => Navigator.of(context).pop(hour * 60 + minute),
           ),
         ],

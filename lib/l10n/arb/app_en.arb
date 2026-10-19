@@ -1,4 +1,522 @@
 {
   "@@locale": "en",
-  "appTitle": "Gatepass"
+  "appTitle": "Gatepass",
+  "commonBack": "Back",
+  "commonCancel": "Cancel",
+  "commonClose": "Close",
+  "commonCopy": "Copy",
+  "commonCut": "Cut",
+  "commonLoading": "Loading",
+  "commonNextMonth": "Next month",
+  "commonPaste": "Paste",
+  "commonPreviousMonth": "Previous month",
+  "commonRefresh": "Refresh",
+  "commonRevoke": "Revoke",
+  "commonSelectAll": "Select all",
+  "commonSetTime": "Set time",
+  "commonNoCode": "No code",
+  "appearanceSystem": "System",
+  "appearanceLight": "Light",
+  "appearanceDark": "Dark",
+  "otpChannelSms": "SMS",
+  "otpChannelWhatsapp": "WhatsApp",
+  "inviteStatusActive": "Active",
+  "inviteStatusExpired": "Expired",
+  "inviteStatusRevoked": "Revoked",
+  "dayToday": "Today",
+  "dayTomorrow": "Tomorrow",
+  "dayYesterday": "Yesterday",
+  "windowSameDay": "{day}, {from} – {until}",
+  "@windowSameDay": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "from": {
+        "type": "String"
+      },
+      "until": {
+        "type": "String"
+      }
+    }
+  },
+  "windowAcrossDays": "{fromDay} {from} – {untilDay} {until}",
+  "@windowAcrossDays": {
+    "placeholders": {
+      "fromDay": {
+        "type": "String"
+      },
+      "from": {
+        "type": "String"
+      },
+      "untilDay": {
+        "type": "String"
+      },
+      "until": {
+        "type": "String"
+      }
+    }
+  },
+  "durationMinutes": "{minutes} min",
+  "@durationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "durationHours": "{hours} h",
+  "@durationHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "durationHoursMinutes": "{hours} h {minutes} min",
+  "@durationHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "greetingMorning": "Good morning",
+  "greetingAfternoon": "Good afternoon",
+  "greetingEvening": "Good evening",
+  "inviteAlwaysValid": "Always valid",
+  "errorConnection": "Can’t reach ATG. Check your connection and try again.",
+  "errorTimeout": "ATG is taking too long to answer. Try again in a moment.",
+  "errorServer": "ATG couldn’t do that just now. Please try again.",
+  "errorNotSignedIn": "You’ve been signed out. Sign in again to continue.",
+  "errorNoEstateAccount": "No estate account is linked to this number.",
+  "errorBackupConflict": "Another phone backed up at the same time. Try again.",
+  "errorBackupDecrypt": "That recovery phrase doesn’t open this backup.",
+  "errorBackupUnavailable": "The backup service couldn’t be reached. Try again later.",
+  "errorPhraseInvalid": "Enter the 12 words of your recovery phrase.",
+  "errorStorage": "This phone’s secure storage couldn’t be used.",
+  "errorUnknown": "Something went wrong. Please try again.",
+  "tabHome": "Home",
+  "tabVisitors": "Visitors",
+  "tabAccount": "Account",
+  "tabInviteSomeone": "Invite someone",
+  "signInTitle": "Get through the gate faster",
+  "signInLead": "Sign in with the mobile number your estate has on file.",
+  "signInCheckWhatsapp": "Check WhatsApp",
+  "signInCheckMessages": "Check your messages",
+  "signInEnterCode": "Enter the 6-digit code we sent to {phone}.",
+  "@signInEnterCode": {
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
+  "signInMobileNumber": "Mobile number",
+  "signInChangeNumber": "Change number",
+  "signInResendCode": "Resend code",
+  "signInSendInstead": "Send by {channel} instead",
+  "@signInSendInstead": {
+    "placeholders": {
+      "channel": {
+        "type": "String"
+      }
+    }
+  },
+  "signInCodeSentBy": "The code was sent by {channel}. It can take a few seconds.",
+  "@signInCodeSentBy": {
+    "placeholders": {
+      "channel": {
+        "type": "String"
+      }
+    }
+  },
+  "signInSubmit": "Sign in",
+  "signInSendBy": "Send the code by",
+  "notificationsTitle": "Notifications",
+  "notificationsMarkAllRead": "Mark all read",
+  "notificationsEmptyTitle": "You’re all caught up",
+  "notificationsEmptyBody": "Arrivals, departures and estate notices show up here.",
+  "notificationsNew": "New",
+  "notificationsEarlier": "Earlier",
+  "notificationsTime": "{day}, {time}",
+  "@notificationsTime": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "commonDone": "Done",
+  "accountProperty": "Your property",
+  "accountBackup": "Backup",
+  "accountBackupOn": "On, end-to-end encrypted",
+  "accountOff": "Off",
+  "accountAppearance": "Appearance",
+  "accountAbout": "About",
+  "accountAboutGatepass": "About Gatepass",
+  "accountAboutBody": "Gatepass signs in to your At The Gate account and uses its visitor invitation service. It shows the estate and invitations returned by that account. Gate entry history is not available to this account.",
+  "accountSignOut": "Sign out",
+  "accountSignOutTitle": "Sign out?",
+  "accountSignOutBody": "You’ll need a new code to sign back in.",
+  "accountStaySignedIn": "Stay signed in",
+  "backupTitle": "Cloud backup",
+  "backupChecking": "Checking for a backup…",
+  "backupIntro": "Keep your visitors and invites if you change or reset your phone. They’re encrypted on this phone with a recovery phrase only you have, so nobody else can read them, not even Gatepass.",
+  "backupPhraseTitle": "Your recovery phrase",
+  "backupPhraseBody": "Write these 12 words down and keep them safe. You’ll need them to restore on another phone. Without them the backup can’t be opened.",
+  "backupRestoreTitle": "Restore your backup",
+  "backupRestoreBody": "This account already has a backup. Enter its 12-word recovery phrase to bring it to this phone.",
+  "backupOnTitle": "Cloud backup is on",
+  "backupOnBody": "Changes back up automatically, encrypted on this phone first.",
+  "backupOnBodyLast": "Last backed up {day} at {time}. Changes back up automatically.",
+  "@backupOnBodyLast": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "backupUnreachable": "Couldn’t reach the backup. Check your connection.",
+  "backupWrongPhrase": "That phrase doesn’t open this backup.",
+  "backupSomethingWrong": "Something went wrong. Try again.",
+  "backupEnterAllWords": "Enter all 12 words, separated by spaces.",
+  "backupRestored": "Backup restored",
+  "backupIsOn": "Cloud backup is on",
+  "backupBackedUp": "Backed up",
+  "backupTurnedOff": "Cloud backup turned off",
+  "backupStartOverTitle": "Start a new backup?",
+  "backupStartOverBody": "The old backup is replaced, and anything only it had is lost. Invites on this phone are kept.",
+  "backupStartOver": "Start over",
+  "backupTurnOffTitle": "Turn off cloud backup?",
+  "backupTurnOffBody": "The backup is deleted from the cloud. Invites stay on this phone.",
+  "backupTurnOff": "Turn off",
+  "backupKeepOn": "Keep it on",
+  "backupCopyWords": "Copy words",
+  "backupCopiedWords": "Copied. Save them somewhere safe.",
+  "backupPhraseLabel": "Recovery phrase",
+  "backupPhraseHint": "12 words",
+  "backupTurnOn": "Turn on",
+  "backupSaved": "I’ve saved them",
+  "backupRestore": "Restore",
+  "backupLostPhrase": "Lost the phrase? Start a new backup",
+  "backupBackUpNow": "Back up now",
+  "backupTurnOffButton": "Turn off cloud backup",
+  "homeUnreadNotifications": "{count} unread notifications",
+  "@homeUnreadNotifications": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeGreeting": "{greeting}, {name}",
+  "@homeGreeting": {
+    "placeholders": {
+      "greeting": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeLiveInvites": "Live invites",
+  "homeAllVisitors": "All visitors",
+  "homeNoLiveTitle": "No live invites",
+  "homeNoLiveBody": "Tap a tile above to let someone in.",
+  "homeLetSomeoneIn": "Let someone in",
+  "homeLetSomeoneInBody": "One tap creates a gate code. Hold a tile to adjust it.",
+  "homeDeliveriesAndRides": "Deliveries & rides",
+  "homeCreateCodeFor": "Create a gate code for {name}",
+  "@homeCreateCodeFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homePeopleInvited": "People you’ve invited",
+  "homeSomeoneNew": "Someone new",
+  "homeInviteSomeoneNew": "Invite someone new",
+  "homeAlreadyInvited": "{name} already has an invite",
+  "@homeAlreadyInvited": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeInviteAgain": "Invite {name} again",
+  "@homeInviteAgain": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "inviteNotFoundTitle": "Invite not found",
+  "inviteNotFoundBody": "It may belong to another property.",
+  "inviteDetailServiceCaption": "The guard scans this, or the driver gives the code.",
+  "inviteDetailPersonCaption": "Show this at the gate, or send {name} the invite.",
+  "@inviteDetailPersonCaption": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "inviteCopyCode": "Copy code",
+  "inviteCodeCopied": "Code copied",
+  "inviteShare": "Share",
+  "inviteDetails": "Details",
+  "inviteMobile": "Mobile",
+  "inviteVehicle": "Vehicle",
+  "inviteAdded": "Added",
+  "inviteRevokeCode": "Revoke code",
+  "inviteRevokePerson": "Revoke {name}’s invite",
+  "@inviteRevokePerson": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "inviteServiceCanComeIn": "{name} can come in",
+  "@inviteServiceCanComeIn": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "invitePersonInvited": "{name} is invited",
+  "@invitePersonInvited": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "inviteCreatedShare": "Share invite",
+  "inviteCreatedTitle": "Invite ready",
+  "inviteCreatedBody": "Share it with {name}: the code, the link or a picture of this QR all work at the gate.",
+  "@inviteCreatedBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "inviteCreatedValid": "Valid",
+  "inviteFormTitle": "New invite",
+  "inviteFormFullName": "Full name",
+  "inviteFormMoreOptions": "More options",
+  "inviteFormFewerOptions": "Fewer options",
+  "inviteFormOptionsSummary": "Another day, set hours, mobile number or car",
+  "inviteFormIncludesPhone": "Includes mobile number",
+  "inviteFormIncludesCar": "Includes car",
+  "inviteFormIncludesPhoneAndCar": "Includes mobile number and car",
+  "inviteFormMobileOptional": "Mobile number (optional)",
+  "inviteFormMobileHelper": "Saved on their visitor profile.",
+  "inviteFormWhichDay": "Which day?",
+  "inviteFormAnotherDay": "Another day…",
+  "inviteFormHowLong": "How long can they stay?",
+  "inviteFormArrivingFrom": "Arriving from",
+  "inviteFormByCar": "Coming by car",
+  "inviteFormByCarHelper": "Guards can match the registration at the gate",
+  "inviteFormRegistration": "Registration number",
+  "inviteFormRegistrationHint": "e.g. HN 42 KP GP",
+  "inviteFormStartPassed": "That start time has passed. Pick a later one.",
+  "inviteFormCreate": "Create invite",
+  "inviteFormValidAllDayToday": "Valid all day today, until {time}",
+  "@inviteFormValidAllDayToday": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "inviteFormValidAllDayTomorrow": "Valid all day tomorrow",
+  "inviteFormValidAllDayOn": "Valid all day {day}",
+  "@inviteFormValidAllDayOn": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "inviteFormValid": "Valid {window}",
+  "@inviteFormValid": {
+    "placeholders": {
+      "window": {
+        "type": "String"
+      }
+    }
+  },
+  "stayAllDay": "All day",
+  "stayHours": "{hours, plural, =1{1 hour} other{{hours} hours}}",
+  "@stayHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "passSiteAndWindow": "{site} · {window}",
+  "@passSiteAndWindow": {
+    "placeholders": {
+      "site": {
+        "type": "String"
+      },
+      "window": {
+        "type": "String"
+      }
+    }
+  },
+  "passCaption": "Scan this at the gate, or give the guard the code.",
+  "quickFailed": "Couldn’t create the code",
+  "quickUntil": "Until {time}",
+  "@quickUntil": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "quickUntilOtherDay": "{time} {day}",
+  "@quickUntilOtherDay": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "quickServiceCaption": "Send the driver the code. The guard can also scan this.",
+  "quickCopied": "Copied",
+  "quickRevoked": "Code for {name} revoked",
+  "@quickRevoked": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "revokeServiceTitle": "Revoke the {name} code?",
+  "@revokeServiceTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "revokePersonTitle": "Revoke {name}’s invite?",
+  "@revokePersonTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "revokeBody": "The link and gate code stop working straight away.",
+  "revokeKeep": "Keep it",
+  "shareSendDriver": "Send the driver any of these.",
+  "shareSendPerson": "Send {name} any of these.",
+  "@shareSendPerson": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shareCode": "Code",
+  "shareLink": "Link",
+  "shareImage": "Image",
+  "shareImageSubtitle": "The QR code and gate code as a picture",
+  "shareMessage": "Invite message",
+  "shareMessageSubtitle": "A note with the link and the code",
+  "shareImageFileName": "Gate pass {code}.png",
+  "@shareImageFileName": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "shareImageFailed": "Couldn’t make the picture. Share the code or link instead.",
+  "shareGateCode": "Gate code for {site}: {code}",
+  "@shareGateCode": {
+    "placeholders": {
+      "site": {
+        "type": "String"
+      },
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "shareGateCodeUntil": "Gate code for {site}: {code} (valid until {time})",
+  "@shareGateCodeUntil": {
+    "placeholders": {
+      "site": {
+        "type": "String"
+      },
+      "code": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "shareInviteMessage": "Hi {name}, you’re invited to {site} ({window}). Show the QR code from this link at the gate: {link} — or give the guard the access code {code}.",
+  "@shareInviteMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "site": {
+        "type": "String"
+      },
+      "window": {
+        "type": "String"
+      },
+      "link": {
+        "type": "String"
+      },
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "visitorsTitle": "Visitors",
+  "visitorsActive": "Active · {count}",
+  "@visitorsActive": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "visitorsPast": "Past",
+  "visitorsSwipeHint": "Swipe an invite left to revoke it.",
+  "visitorsNoneTitle": "No visitors coming",
+  "visitorsNoneBody": "Invite someone and they’ll get a link to use at the gate.",
+  "visitorsNoneAction": "Invite a visitor",
+  "visitorsNoPastTitle": "No past visits",
+  "visitorsNoPastBody": "Expired and revoked invites end up here.",
+  "visitorsValidNow": "Valid now",
+  "visitorsLaterToday": "Later today"
 }

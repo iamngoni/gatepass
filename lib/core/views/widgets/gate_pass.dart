@@ -5,6 +5,7 @@ import '../../configs/gp_colors.dart';
 import '../../configs/gp_motion.dart';
 import '../../configs/gp_spacing.dart';
 import '../../utils/extensions/build_context_extensions.dart';
+import '../../utils/extensions/localization_extensions.dart';
 import '../../utils/text_helpers.dart';
 import 'gp_activity.dart';
 import 'gp_qr_code.dart';
@@ -100,7 +101,7 @@ class GatePass extends StatelessWidget {
               ready
                   ? formatCode(code)
                   : missing
-                  ? 'No code'
+                  ? context.l10n.commonNoCode
                   : '•••• •••• ••••',
               maxLines: 1,
               style: type.code.copyWith(

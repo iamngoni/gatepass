@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 
 import '../../configs/gp_spacing.dart';
 import '../../utils/extensions/build_context_extensions.dart';
+import '../../utils/extensions/localization_extensions.dart';
 import 'pressable.dart';
 
 /// The phone's own edit menu where iOS allows it, the app's otherwise.
@@ -58,10 +59,13 @@ class GpSelectionToolbar extends StatelessWidget {
                     child: Text(
                       item.label ??
                           switch (item.type) {
-                            ContextMenuButtonType.cut => 'Cut',
-                            ContextMenuButtonType.copy => 'Copy',
-                            ContextMenuButtonType.paste => 'Paste',
-                            ContextMenuButtonType.selectAll => 'Select all',
+                            ContextMenuButtonType.cut => context.l10n.commonCut,
+                            ContextMenuButtonType.copy =>
+                              context.l10n.commonCopy,
+                            ContextMenuButtonType.paste =>
+                              context.l10n.commonPaste,
+                            ContextMenuButtonType.selectAll =>
+                              context.l10n.commonSelectAll,
                             _ => '',
                           },
                       style: context.type.chip,

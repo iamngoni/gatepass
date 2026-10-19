@@ -9,7 +9,6 @@ import 'package:gatepass/invites/models/data/invite_status.dart';
 import 'package:gatepass/invites/models/repos/impl/dio_invite_repository.dart';
 
 import '../helpers/atg_harness.dart';
-import '../helpers/route_adapter.dart';
 
 void main() {
   late AtgHarness h;

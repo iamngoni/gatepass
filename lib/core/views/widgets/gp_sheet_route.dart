@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 
 import '../../configs/gp_motion.dart';
 import '../../utils/extensions/build_context_extensions.dart';
+import '../../utils/extensions/localization_extensions.dart';
 import 'gp_sheet_page.dart';
 
 Future<T?> showGpSheet<T>(
@@ -15,6 +16,7 @@ Future<T?> showGpSheet<T>(
   GpSheetRoute<T>(
     builder: builder,
     barrier: context.colors.overlay,
+    barrierText: context.l10n.commonClose,
     maxHeightFactor: maxHeightFactor,
   ),
 );
@@ -23,11 +25,15 @@ class GpSheetRoute<T> extends PopupRoute<T> {
   GpSheetRoute({
     required this.builder,
     required this.barrier,
+    required this.barrierText,
     this.maxHeightFactor = .92,
   });
 
   final WidgetBuilder builder;
   final Color barrier;
+
+  /// What a screen reader calls the scrim, which closes the sheet.
+  final String barrierText;
   final double maxHeightFactor;
 
   @override
@@ -37,7 +43,7 @@ class GpSheetRoute<T> extends PopupRoute<T> {
   bool get barrierDismissible => true;
 
   @override
-  String get barrierLabel => 'Close';
+  String get barrierLabel => barrierText;
 
   @override
   Duration get transitionDuration => GpMotion.slow;
