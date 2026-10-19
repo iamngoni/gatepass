@@ -7,8 +7,10 @@ environment:
   sdk: ^3.12.2
 
 dependencies:
+  crypto: ^3.0.7
   flutter:
     sdk: flutter
+  flutter_secure_storage: ^11.2.0
   intl: ^0.20.3
   lucide_icons_flutter: 3.1.15
   qr: ^3.0.2

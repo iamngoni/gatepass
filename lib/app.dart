@@ -77,11 +77,40 @@ class _GatepassAppState extends State<GatepassApp> {
               ),
             );
           },
-          home: state.signedIn ? const HomeShell() : const SignInScreen(),
+          home: state.signedIn
+              ? const HomeShell()
+              : state.restoring
+              ? const _Launch()
+              : const SignInScreen(),
         ),
       ),
     );
   }
+}
+
+/// Shown while a saved session is checked, in place of the sign-in screen.
+class _Launch extends StatelessWidget {
+  const _Launch();
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(GpRadius.lg),
+          child: Image.asset(
+            'assets/brand/gatepass-mark.png',
+            width: 72,
+            height: 72,
+            semanticLabel: 'Gatepass',
+          ),
+        ),
+        const SizedBox(height: GpSpace.xl),
+        GpActivity(color: context.colors.inkMuted),
+      ],
+    ),
+  );
 }
 
 class HomeShell extends StatefulWidget {

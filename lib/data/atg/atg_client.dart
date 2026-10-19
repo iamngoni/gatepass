@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'atg_config.dart';
 
@@ -261,17 +262,21 @@ class AtgSession {
 ///  3. identitytoolkit signInWithCustomToken              → idToken + refreshToken
 ///  4. securetoken /v1/token (refresh_token grant)        → renew idToken
 class AtgAuth {
-  AtgAuth(this._http) {
-    _restore();
-  }
+  AtgAuth(this._http, {FlutterSecureStorage? storage})
+    : _storage = storage ?? const FlutterSecureStorage();
 
   final AtgHttp _http;
+  final FlutterSecureStorage _storage;
   AtgSession? session;
+  Future<void>? _restoring;
 
-  /// The Firebase refresh token is kept in the app sandbox so a relaunch (or a
-  /// debug hot restart) doesn't force another SMS. It is a credential: the
-  /// directory is private to the app, and nothing here is ever logged.
-  static final String _sessionPath =
+  /// The Firebase refresh token is a credential, so it lives in the Keychain
+  /// (iOS) or Keystore-backed storage (Android), and is never logged. It
+  /// survives a relaunch so the resident isn't asked for another code.
+  static const _sessionKey = 'atg.session';
+
+  /// Where earlier builds kept the session, in plain JSON. Moved on restore.
+  static final String _legacySessionPath =
       '${Directory.systemTemp.path}/gatepass_session.json';
 
   /// Stable per-install id. The OTP flow pairs start/check through this and the
@@ -330,7 +335,7 @@ class AtgAuth {
     }
     await _exchangeCustomToken(customToken);
     session?.phone = phoneE164;
-    _persist();
+    await _persist();
   }
 
   /// Renews [session] with the refresh token. Called automatically before an
@@ -353,16 +358,15 @@ class AtgAuth {
     s.refreshToken = map['refresh_token'] as String? ?? s.refreshToken;
     s.expiresAt = _expiry(map['expires_in']);
     s.uid = map['user_id'] as String? ?? s.uid;
-    _persist();
+    await _persist();
   }
 
-  void signOut() {
+  Future<void> signOut() async {
     session = null;
     try {
-      final f = File(_sessionPath);
-      if (f.existsSync()) f.deleteSync();
-    } on Object {
-      // Nothing to clean up.
+      await _storage.delete(key: _sessionKey);
+    } on Object catch (e) {
+      debugPrint('[ATG] could not clear session: $e');
     }
   }
 
@@ -385,7 +389,7 @@ class AtgAuth {
       expiresAt: _expiry(map['expiresIn']),
       uid: map['localId'] as String? ?? _jwtSubject(idToken),
     );
-    _persist();
+    await _persist();
   }
 
   /// Deep-searches the login response for one of [AtgConfig.customTokenKeys]
@@ -413,11 +417,20 @@ class AtgAuth {
     return found;
   }
 
-  void _restore() {
+  /// Loads the stored session once; later calls wait for the same load.
+  Future<void> restore() => _restoring ??= _restore();
+
+  Future<void> _restore() async {
     try {
-      final f = File(_sessionPath);
-      if (!f.existsSync()) return;
-      final map = jsonDecode(f.readAsStringSync());
+      var raw = await _storage.read(key: _sessionKey);
+      final legacy = File(_legacySessionPath);
+      if (legacy.existsSync()) {
+        raw ??= legacy.readAsStringSync();
+        await _storage.write(key: _sessionKey, value: raw);
+        legacy.deleteSync();
+      }
+      if (raw == null) return;
+      final map = jsonDecode(raw);
       if (map is! Map) return;
       final refreshToken = map['refreshToken'] as String?;
       if (refreshToken == null || refreshToken.isEmpty) return;
@@ -434,12 +447,13 @@ class AtgAuth {
     }
   }
 
-  void _persist() {
+  Future<void> _persist() async {
     final s = session;
     if (s == null) return;
     try {
-      File(_sessionPath).writeAsStringSync(
-        jsonEncode({
+      await _storage.write(
+        key: _sessionKey,
+        value: jsonEncode({
           'idToken': s.idToken,
           'refreshToken': s.refreshToken,
           'expiresAt': s.expiresAt.millisecondsSinceEpoch,

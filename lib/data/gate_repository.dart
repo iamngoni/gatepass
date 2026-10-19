@@ -14,6 +14,10 @@ enum OtpChannel {
   final String label;
 }
 
+/// The most invites [GateRepository.fetchInvites] returns. A shorter list is
+/// everything the backend has.
+const invitePageLimit = 50;
+
 abstract interface class GateRepository {
   Future<void> requestCode(String phone, {OtpChannel channel});
   Future<Resident> signIn({required String phone, required String code});
@@ -21,6 +25,9 @@ abstract interface class GateRepository {
   /// Resumes a previously stored session, returning the resident when the
   /// persisted refresh token is still valid. Null means sign-in is required.
   Future<Resident?> restoreSession();
+
+  /// Forgets the stored session, so the next launch asks for a code again.
+  Future<void> signOut();
 
   Future<List<Site>> fetchSites();
 

@@ -48,6 +48,7 @@ class AtgGateRepository implements GateRepository {
   // --- auth / transport ---
 
   Future<Map<String, String>> _authHeaders() async {
+    await _auth.restore();
     final s = _auth.session;
     if (s == null) throw AtgException('Not signed in.');
     if (s.isExpired) await _auth.refresh();
@@ -115,6 +116,7 @@ class AtgGateRepository implements GateRepository {
 
   @override
   Future<Resident?> restoreSession() async {
+    await _auth.restore();
     if (!_auth.isSignedIn) return null;
     try {
       // Restored sessions deliberately start expired, so this both proves the
@@ -160,6 +162,14 @@ class AtgGateRepository implements GateRepository {
     }
     _resident = who;
     return who;
+  }
+
+  @override
+  Future<void> signOut() async {
+    _resident = null;
+    _accountUid = null;
+    _invitationCategoryId = null;
+    await _auth.signOut();
   }
 
   @override
@@ -277,7 +287,7 @@ class AtgGateRepository implements GateRepository {
   Future<List<Invite>> fetchInvites(String siteId) async {
     final res = await _get(
       AtgConfig.invitesListPath,
-      query: {'uid': ?_uid, 'limit': '50'},
+      query: {'uid': ?_uid, 'limit': '$invitePageLimit'},
       context: 'invites',
     );
     final list = _listOf(res);

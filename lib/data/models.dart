@@ -102,6 +102,44 @@ class Invite {
   String get firstName =>
       isService ? displayName : visitorName.split(' ').first;
 
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'siteId': siteId,
+    'visitorName': visitorName,
+    'serviceId': serviceId,
+    'phone': phone,
+    'vehicleReg': vehicleReg,
+    'from': from.millisecondsSinceEpoch,
+    'until': until.millisecondsSinceEpoch,
+    'status': status.name,
+    'code': code,
+    'link': link,
+    'createdAt': createdAt.millisecondsSinceEpoch,
+    'openEnded': openEnded,
+    'windowText': windowText,
+  };
+
+  static Invite fromJson(Map<String, Object?> j) {
+    DateTime time(String key) =>
+        DateTime.fromMillisecondsSinceEpoch(j[key]! as int);
+    return Invite(
+      id: j['id']! as String,
+      siteId: j['siteId']! as String,
+      visitorName: j['visitorName']! as String,
+      serviceId: j['serviceId'] as String?,
+      phone: j['phone'] as String?,
+      vehicleReg: j['vehicleReg'] as String?,
+      from: time('from'),
+      until: time('until'),
+      status: InviteStatus.values.byName(j['status']! as String),
+      code: j['code']! as String,
+      link: j['link']! as String,
+      createdAt: time('createdAt'),
+      openEnded: j['openEnded'] as bool? ?? false,
+      windowText: j['windowText'] as String?,
+    );
+  }
+
   Invite copyWith({InviteStatus? status}) => Invite(
     id: id,
     siteId: siteId,

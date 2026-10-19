@@ -1,3 +1,4 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -81,6 +82,7 @@ void main() {
   );
 
   setUp(() {
+    FlutterSecureStorage.setMockInitialValues({});
     sessionFile.writeAsStringSync(
       jsonEncode({
         'idToken': 'fake.id.token',

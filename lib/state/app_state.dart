@@ -3,20 +3,27 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 
 import '../data/gate_repository.dart';
+import '../data/invite_archive.dart';
 import '../data/models.dart';
 import '../data/services.dart';
 import '../ui/theme.dart';
 
 class AppState extends ChangeNotifier {
-  AppState(this._repo);
+  AppState(this._repo, {InviteArchive? archive})
+    : _archive = archive ?? MemoryInviteArchive();
 
   final GateRepository _repo;
+  final InviteArchive _archive;
 
   Resident? resident;
   Site? _site;
   List<Invite> invites = const [];
   List<AppNotification> notifications = const [];
   Appearance appearance = Appearance.system;
+
+  /// True while a saved session is being checked on launch, so the app shows
+  /// a loader instead of flashing the sign-in screen.
+  bool restoring = false;
 
   bool get signedIn => resident != null && _site != null;
   Site get site => _site!;
@@ -122,11 +129,18 @@ class AppState extends ChangeNotifier {
   /// Uses the stored Firebase refresh token on launch. A network failure keeps
   /// the token for the next attempt and leaves the sign-in screen available.
   Future<void> restoreSession() async {
+    restoring = true;
+    notifyListeners();
     try {
       final who = await _repo.restoreSession();
       if (who != null) await _enter(who);
     } on Object catch (e) {
       debugPrint('[Gatepass] session restore failed: $e');
+    } finally {
+      if (restoring) {
+        restoring = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -134,6 +148,9 @@ class AppState extends ChangeNotifier {
     final sites = await _repo.fetchSites();
     _site = sites.first;
     resident = who;
+    // What this account had last time shows straight away, offline included.
+    invites = await _archive.load(who.id);
+    restoring = false;
     notifyListeners();
     // Entering the app must not depend on the first data load: authenticated
     // endpoints may still be settling, and the tabs can retry on pull.
@@ -144,7 +161,9 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// The invite archive stays on the device for the next sign-in.
   void signOut() {
+    unawaited(_repo.signOut());
     resident = null;
     _site = null;
     invites = const [];
@@ -170,9 +189,19 @@ class AppState extends ChangeNotifier {
       Error.throwWithStackTrace(first.error, first.stackTrace);
     }
     if (id != _site?.id) return;
-    invites = i;
+    invites = mergeInvites(
+      invites,
+      i,
+      fetchedIsComplete: i.length < invitePageLimit,
+    );
     notifications = n;
     notifyListeners();
+    await _saveInvites();
+  }
+
+  Future<void> _saveInvites() async {
+    final who = resident;
+    if (who != null) await _archive.save(who.id, invites);
   }
 
   Future<Invite> createInvite(InviteDraft draft) async {
@@ -181,14 +210,21 @@ class AppState extends ChangeNotifier {
     if (siteId == _site?.id) {
       invites = [...invites, invite];
       notifyListeners();
+      await _saveInvites();
     }
     return invite;
   }
 
+  /// ATG deletes the profile, so the invite keeps its details here and only
+  /// its status changes.
   Future<void> revokeInvite(String id) async {
-    final updated = await _repo.revokeInvite(id);
-    invites = [for (final i in invites) i.id == id ? updated : i];
+    await _repo.revokeInvite(id);
+    invites = [
+      for (final i in invites)
+        i.id == id ? i.copyWith(status: InviteStatus.revoked) : i,
+    ];
     notifyListeners();
+    await _saveInvites();
   }
 
   Future<void> markRead(String id) => _markRead([id]);
