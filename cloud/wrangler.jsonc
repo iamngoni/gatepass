@@ -2,7 +2,7 @@
   "name": "gatepass-backup",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-01",
-  "workers_dev": true,
+  "workers_dev": false,
   "routes": [{ "pattern": "gatepass.antonlabs.cc", "custom_domain": true }],
   "kv_namespaces": [
     { "binding": "BACKUPS", "id": "afc0ed6998a54f678b46cd9c0d43a4d8" }
