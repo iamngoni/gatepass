@@ -42,7 +42,11 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      # The default also installs `tools`, which current SDK managers no
+      # longer have. Gradle fetches the platform and build tools it needs.
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - uses: subosito/flutter-action@v2
         with:

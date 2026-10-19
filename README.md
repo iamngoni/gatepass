@@ -68,4 +68,5 @@ Signing needs the `ANDROID_KEYSTORE_BASE64` and `ANDROID_KEYSTORE_PASSWORD`
 repository secrets (key alias `gatepass`). Local release builds read
 `android/key.properties` (gitignored) with `storeFile`, `storePassword`,
 `keyAlias` and `keyPassword`, and fall back to the debug key without it. Keep a
-backup of the keystore: Android only installs updates signed with the same key.
+backup of the keystore (it lives in the private `iamngoni/keys` repo as
+`gatepass.jks`): Android only installs updates signed with the same key.
