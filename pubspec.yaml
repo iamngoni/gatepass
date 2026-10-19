@@ -1,7 +1,7 @@
 name: gatepass
 description: "Resident-side visitor invitations for At The Gate estates."
 publish_to: 'none'
-version: 0.1.0+1
+version: 0.1.1+2
 
 environment:
   sdk: ^3.12.2
