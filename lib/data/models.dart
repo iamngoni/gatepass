@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import 'services.dart';
+
 @immutable
 class Resident {
   const Resident({
@@ -93,8 +95,12 @@ class Invite {
 
   bool get isService => serviceId != null;
 
+  /// A service's own spelling ("Uber Eats", where ATG stored "Uber eats"),
+  /// else the visitor's name as entered.
+  String get displayName => serviceById(serviceId)?.name ?? visitorName;
+
   String get firstName =>
-      isService ? visitorName : visitorName.split(' ').first;
+      isService ? displayName : visitorName.split(' ').first;
 
   Invite copyWith({InviteStatus? status}) => Invite(
     id: id,

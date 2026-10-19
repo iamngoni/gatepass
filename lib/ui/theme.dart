@@ -35,6 +35,8 @@ class GpColors {
     required this.chevron,
     required this.track,
     required this.trackThumb,
+    required this.chrome,
+    required this.floatShadow,
   });
 
   final Color canvas;
@@ -72,6 +74,13 @@ class GpColors {
   /// The segmented control's groove and its thumb.
   final Color track;
   final Color trackThumb;
+
+  /// Translucent fill for chrome that floats over content: the tab bar.
+  final Color chrome;
+
+  /// The app's one shadow, for chrome floating over scrolling content.
+  /// Surfaces in the page stay flat.
+  final List<BoxShadow> floatShadow;
 
   static const toggleOn = Color(0xFF2E7D5B);
   static const toggleKnob = Color(0xFFFFFFFF);
@@ -129,6 +138,11 @@ class GpColors {
     chevron: Color(0xFF8A968F),
     track: Color(0xFFDDE3DC),
     trackThumb: Color(0xFFFFFFFF),
+    chrome: Color(0xE6FFFFFF),
+    floatShadow: [
+      BoxShadow(color: Color(0x140F1F19), blurRadius: 24, offset: Offset(0, 8)),
+      BoxShadow(color: Color(0x0A0F1F19), blurRadius: 2, offset: Offset(0, 1)),
+    ],
   );
 
   static const dark = GpColors(
@@ -157,6 +171,14 @@ class GpColors {
     chevron: Color(0xFF6B7A73),
     track: Color(0xFF24332D),
     trackThumb: Color(0xFF3A4D45),
+    chrome: Color(0xE01B2722),
+    floatShadow: [
+      BoxShadow(
+        color: Color(0x73000000),
+        blurRadius: 28,
+        offset: Offset(0, 10),
+      ),
+    ],
   );
 }
 
@@ -328,7 +350,7 @@ abstract final class GpSizes {
   static const iconLg = 24.0;
   static const avatar = 44.0;
   static const header = 56.0;
-  static const tabBar = 68.0;
+  static const tabBar = 64.0;
   static const tapTarget = 44.0;
   static const hairline = 0.6;
 }

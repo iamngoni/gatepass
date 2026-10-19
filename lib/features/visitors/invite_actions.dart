@@ -9,6 +9,7 @@ import '../../state/app_state.dart';
 import '../../ui/ui.dart';
 import '../../util/format.dart';
 import '../../widgets/common.dart';
+import '../../widgets/gate_pass.dart';
 
 /// A short, user-facing line for an error from the backend (e.g. the live
 /// ATG client's dry-run notice or a network failure).
@@ -18,6 +19,27 @@ String describeError(Object e) {
     '',
   );
   return s.isEmpty ? 'Something went wrong. Please try again.' : s;
+}
+
+/// Pull-to-refresh: reloads invites and notifications, and says so when the
+/// network lets it down instead of failing silently.
+Future<void> refreshInvites(BuildContext context) async {
+  try {
+    // A stalled request must not hold the pull open forever.
+    await AppScope.read(context).refresh().timeout(const Duration(seconds: 20));
+  } on TimeoutException {
+    if (context.mounted) {
+      Toast.show(
+        context,
+        'ATG is taking too long to answer. Try again in a moment.',
+        tone: ToastTone.error,
+      );
+    }
+  } on Object catch (e) {
+    if (context.mounted) {
+      Toast.show(context, describeError(e), tone: ToastTone.error);
+    }
+  }
 }
 
 /// One tap: create the invite straight away and show its code.
@@ -119,101 +141,85 @@ class _QuickInviteSheetState extends State<QuickInviteSheet> {
         ? formatTime(d.until)
         : '${formatTime(d.until)} ${dayLabel(d.until).toLowerCase()}';
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        GpSpace.gutter,
-        GpSpace.sm,
-        GpSpace.gutter,
-        GpSpace.lg,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (service != null)
-            ServiceIcon(service: service, size: 64)
-          else
-            InitialsAvatar(name: d.visitorName, size: 64, tone: Tone.accent),
-          const SizedBox(height: GpSpace.lg),
-          Text(
-            _failed
-                ? 'Couldn’t create the code'
-                : service != null
-                ? '$first can come in'
-                : '$first is invited',
-            style: type.title,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: GpSpace.xs),
-          Text(
-            'Until $until',
-            style: type.body.copyWith(color: colors.inkMuted),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: GpSpace.xl),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: GpSpace.xl),
-            decoration: BoxDecoration(
-              color: colors.surfaceMuted,
-              borderRadius: BorderRadius.circular(GpRadius.xl),
+    // Scrolls rather than clipping its buttons on a small phone or at a
+    // large text size.
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          GpSpace.gutter,
+          GpSpace.sm,
+          GpSpace.gutter,
+          GpSpace.lg,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (service != null)
+              ServiceIcon(service: service, size: 52)
+            else
+              InitialsAvatar(name: d.visitorName, size: 52, tone: Tone.accent),
+            const SizedBox(height: GpSpace.lg),
+            Text(
+              _failed
+                  ? 'Couldn’t create the code'
+                  : service != null
+                  ? '$first can come in'
+                  : '$first is invited',
+              style: type.title,
+              textAlign: TextAlign.center,
             ),
-            child: Column(
+            const SizedBox(height: GpSpace.xs),
+            Text(
+              'Until $until',
+              style: type.body.copyWith(color: colors.inkMuted),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: GpSpace.lg),
+            if (!_failed)
+              GatePass(
+                code: invite?.code,
+                caption: service != null
+                    ? 'Send the driver the code. The guard can also scan this.'
+                    : null,
+              ),
+            const SizedBox(height: GpSpace.lg),
+            GpButton(
+              label: _copied
+                  ? (service != null ? 'Copied' : 'Invite copied')
+                  : service != null
+                  ? 'Copy code'
+                  : 'Copy invite message',
+              icon: _copied
+                  ? GpIcons.check
+                  : service != null
+                  ? GpIcons.copy
+                  : GpIcons.share,
+              size: GpButtonSize.large,
+              onPressed: ready ? _copy : null,
+            ),
+            const SizedBox(height: GpSpace.sm),
+            Row(
               children: [
-                Text(
-                  service != null ? 'GATE CODE FOR THE DRIVER' : 'GATE CODE',
-                  style: type.overline,
+                Expanded(
+                  child: GpButton(
+                    label: 'Revoke',
+                    variant: GpButtonVariant.danger,
+                    loading: _revoking,
+                    onPressed: ready ? _revoke : null,
+                  ),
                 ),
-                const SizedBox(height: GpSpace.sm),
-                AnimatedSwitcher(
-                  duration: GpMotion.base,
-                  child: Text(
-                    invite == null ? '––– –––' : formatCode(invite.code),
-                    key: ValueKey(invite?.code),
-                    style: type.code.copyWith(
-                      color: invite == null ? colors.inkFaint : colors.ink,
-                    ),
+                const SizedBox(width: GpSpace.sm),
+                Expanded(
+                  child: GpButton(
+                    label: 'Done',
+                    variant: GpButtonVariant.secondary,
+                    onPressed: () => Navigator.of(context).pop(),
                   ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: GpSpace.xl),
-          GpButton(
-            label: _copied
-                ? (service != null ? 'Copied' : 'Invite copied')
-                : service != null
-                ? 'Copy code'
-                : 'Copy invite message',
-            icon: _copied
-                ? GpIcons.check
-                : service != null
-                ? GpIcons.copy
-                : GpIcons.share,
-            size: GpButtonSize.large,
-            onPressed: ready ? _copy : null,
-          ),
-          const SizedBox(height: GpSpace.sm),
-          Row(
-            children: [
-              Expanded(
-                child: GpButton(
-                  label: 'Revoke',
-                  variant: GpButtonVariant.danger,
-                  loading: _revoking,
-                  onPressed: ready ? _revoke : null,
-                ),
-              ),
-              const SizedBox(width: GpSpace.sm),
-              Expanded(
-                child: GpButton(
-                  label: 'Done',
-                  variant: GpButtonVariant.secondary,
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -224,7 +230,7 @@ Future<bool> confirmRevoke(BuildContext context, Invite invite) async {
   final ok = await showGpConfirm(
     context,
     title: invite.isService
-        ? 'Revoke the ${invite.visitorName} code?'
+        ? 'Revoke the ${invite.displayName} code?'
         : 'Revoke ${invite.firstName}’s invite?',
     body: 'The link and gate code stop working straight away.',
     confirmLabel: 'Revoke',
@@ -241,12 +247,14 @@ Future<bool> confirmRevoke(BuildContext context, Invite invite) async {
   return true;
 }
 
+/// For a driver: just the code, which they read out or type at the gate.
+/// Shared raw, not grouped, so nobody types the spaces.
 Future<void> copyGateCode(Invite invite, String siteName) => Clipboard.setData(
   ClipboardData(
     text: invite.openEnded
-        ? 'Gate code for $siteName: ${formatCode(invite.code)}.'
-        : 'Gate code for $siteName: ${formatCode(invite.code)} '
-              '(valid until ${formatTime(invite.until)}).',
+        ? 'Gate code for $siteName: ${invite.code}'
+        : 'Gate code for $siteName: ${invite.code} '
+              '(valid until ${formatTime(invite.until)})',
   ),
 );
 
@@ -257,11 +265,12 @@ Future<void> shareInvite(
   String siteName, {
   bool confirm = true,
 }) async {
+  // The link opens ATG's visitor page, which shows the same QR as the app.
   final message =
       'Hi ${invite.firstName}, you’re invited to $siteName '
       '(${inviteValidityLabel(invite)}). '
-      'Open this link at the gate: ${invite.link} '
-      '— or use code ${formatCode(invite.code)} on the keypad.';
+      'Show the QR code from this link at the gate: ${invite.link} '
+      '— or give the guard the access code ${invite.code}.';
   await Clipboard.setData(ClipboardData(text: message));
   if (!confirm || !context.mounted) return;
   Toast.show(context, 'Invite copied. Paste it into WhatsApp or SMS.');

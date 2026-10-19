@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 
 import '../data/gate_repository.dart';
@@ -149,10 +151,21 @@ class AppState extends ChangeNotifier {
 
   Future<void> refresh() async {
     final id = site.id;
-    final (i, n) = await (
-      _repo.fetchInvites(id),
-      _repo.fetchNotifications(id),
-    ).wait;
+    final List<Invite> i;
+    final List<AppNotification> n;
+    try {
+      (i, n) = await (
+        _repo.fetchInvites(id),
+        _repo.fetchNotifications(id),
+      ).wait;
+    } on ParallelWaitError<
+      (List<Invite>?, List<AppNotification>?),
+      (AsyncError?, AsyncError?)
+    > catch (e) {
+      // Rethrow the underlying failure, so callers can show its message.
+      final first = (e.errors.$1 ?? e.errors.$2)!;
+      Error.throwWithStackTrace(first.error, first.stackTrace);
+    }
     if (id != _site?.id) return;
     invites = i;
     notifications = n;

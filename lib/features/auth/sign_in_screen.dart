@@ -127,17 +127,13 @@ class _SignInScreenState extends State<SignInScreen> {
           const SizedBox(height: GpSpace.xxl),
           Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: GpColors.brand,
-                  borderRadius: BorderRadius.circular(GpRadius.md - 2),
-                ),
-                child: const Icon(
-                  GpIcons.gate,
-                  color: GpColors.onBrand,
-                  size: 22,
+              ClipRRect(
+                borderRadius: BorderRadius.circular(GpRadius.md - 2),
+                child: Image.asset(
+                  'assets/brand/gatepass-mark.png',
+                  width: 44,
+                  height: 44,
+                  semanticLabel: 'Gatepass',
                 ),
               ),
               const SizedBox(width: GpSpace.md),

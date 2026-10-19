@@ -26,7 +26,10 @@ class AtgException implements Exception {
 /// numbers, JWTs and long opaque tokens are masked while the response's shape
 /// (its key names and non-sensitive values) stays readable.
 class AtgHttp {
-  AtgHttp({HttpClient? client}) : _client = client ?? HttpClient();
+  AtgHttp({HttpClient? client})
+    : _client =
+          client ??
+          (HttpClient()..connectionTimeout = const Duration(seconds: 15));
 
   final HttpClient _client;
 

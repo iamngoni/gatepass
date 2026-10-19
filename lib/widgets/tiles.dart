@@ -70,7 +70,7 @@ class InviteTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(invite.visitorName, style: context.type.heading),
+                    Text(invite.displayName, style: context.type.heading),
                     const SizedBox(height: GpSpace.xxs),
                     Text(
                       inviteValidityLabel(invite),
@@ -96,7 +96,15 @@ class InviteTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: GpSpace.sm),
-              StatusPill(label: invite.status.label, tone: invite.status.tone),
+              // Every live invite is active, so the pill would only repeat
+              // the list it sits in; past ones say how they ended.
+              if (invite.status.isLive)
+                Icon(GpIcons.chevronRight, size: 18, color: colors.chevron)
+              else
+                StatusPill(
+                  label: invite.status.label,
+                  tone: invite.status.tone,
+                ),
             ],
           ),
         ),

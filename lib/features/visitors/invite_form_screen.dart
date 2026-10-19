@@ -7,6 +7,7 @@ import '../../state/app_state.dart';
 import '../../ui/ui.dart';
 import '../../util/format.dart';
 import '../../widgets/common.dart';
+import '../../widgets/gate_pass.dart';
 import 'invite_actions.dart';
 
 /// [initial] prefills the form, e.g. from a held quick tile.
@@ -20,11 +21,11 @@ Future<void> openInviteForm(BuildContext context, {InviteDraft? initial}) =>
 enum _Day { today, tomorrow, other }
 
 enum _Stay {
+  allDay('All day', null),
   h1('1 hour', Duration(hours: 1)),
   h2('2 hours', Duration(hours: 2)),
   h4('4 hours', Duration(hours: 4)),
-  h8('8 hours', Duration(hours: 8)),
-  allDay('All day', null);
+  h8('8 hours', Duration(hours: 8));
 
   const _Stay(this.label, this.duration);
   final String label;
@@ -48,11 +49,15 @@ class _InviteFormScreenState extends State<InviteFormScreen> {
   _Day _day = _Day.today;
   late DateTime _date = dateOnly(DateTime.now());
 
-  /// Arrival time, in minutes since midnight.
+  /// Arrival time for a set number of hours, in minutes since midnight.
   late int _start = _nextQuarter();
-  _Stay _stay = _Stay.h4;
+  _Stay _stay = _Stay.allDay;
   bool _byCar = false;
   bool _saving = false;
+
+  /// The day, hours, mobile number and car. Closed by default, so the usual
+  /// invite is a name and nothing else; a held tile opens it to adjust.
+  late bool _advanced = widget.initial != null;
 
   static int _nextQuarter() {
     final now = DateTime.now();
@@ -60,14 +65,53 @@ class _InviteFormScreenState extends State<InviteFormScreen> {
     return minutes >= 24 * 60 ? 23 * 60 + 45 : minutes;
   }
 
-  DateTime get _from =>
-      DateTime(_date.year, _date.month, _date.day, _start ~/ 60, _start % 60);
+  DateTime get _from {
+    if (_stay.duration == null) {
+      // All day runs from midnight, except today's, which starts now.
+      final now = DateTime.now();
+      return isSameDay(_date, now) ? now : _date;
+    }
+    return DateTime(
+      _date.year,
+      _date.month,
+      _date.day,
+      _start ~/ 60,
+      _start % 60,
+    );
+  }
 
   DateTime get _until {
     final duration = _stay.duration;
-    return duration == null
-        ? DateTime(_date.year, _date.month, _date.day, 23, 59)
-        : _from.add(duration);
+    if (duration != null) return _from.add(duration);
+    final end = DateTime(_date.year, _date.month, _date.day, 23, 59);
+    // Late at night, the rest of today is minutes; give them at least an hour.
+    final soonest = _from.add(const Duration(hours: 1));
+    return end.isBefore(soonest) ? soonest : end;
+  }
+
+  String get _validity {
+    final from = _from;
+    final until = _until;
+    if (_stay.duration == null && isSameDay(until, _date)) {
+      final today = dateOnly(DateTime.now());
+      if (isSameDay(_date, today)) {
+        return 'Valid all day today, until ${formatTime(until)}';
+      }
+      if (isSameDay(_date, addDays(today, 1))) return 'Valid all day tomorrow';
+      return 'Valid all day ${dayLabel(_date)}';
+    }
+    return 'Valid ${windowLabel(from, until)}';
+  }
+
+  /// What the closed options hold, so nothing is sent unseen.
+  String get _optionsSummary {
+    final added = [
+      if (_phone.text.trim().isNotEmpty) 'mobile number',
+      if (_byCar) 'car',
+    ];
+    return added.isEmpty
+        ? 'Another day, set hours, mobile number or car'
+        : 'Includes ${added.join(' and ')}';
   }
 
   bool get _valid =>
@@ -111,6 +155,15 @@ class _InviteFormScreenState extends State<InviteFormScreen> {
     _phone.dispose();
     _reg.dispose();
     super.dispose();
+  }
+
+  void _toggleAdvanced() {
+    setState(() {
+      _advanced = !_advanced;
+      // A car with no registration would block Create from behind a closed
+      // section, with nothing on screen to say why.
+      if (!_advanced && _byCar && _reg.text.trim().isEmpty) _byCar = false;
+    });
   }
 
   Future<void> _pickDay(_Day day) async {
@@ -192,6 +245,104 @@ class _InviteFormScreenState extends State<InviteFormScreen> {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final startsInPast = _startsInPast;
+    final tone = startsInPast ? colors.warning : colors.accent;
+
+    final options = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: GpSpace.xl),
+        GpField(
+          controller: _phone,
+          label: 'Mobile number (optional)',
+          helper: 'Saved on their visitor profile.',
+          keyboardType: TextInputType.phone,
+          autofillHints: const [AutofillHints.telephoneNumber],
+        ),
+        const _Label('Which day?'),
+        Wrap(
+          spacing: GpSpace.sm,
+          runSpacing: GpSpace.sm,
+          children: [
+            GpPill(
+              label: 'Today',
+              selected: _day == _Day.today,
+              onPressed: () => _pickDay(_Day.today),
+            ),
+            GpPill(
+              label: 'Tomorrow',
+              selected: _day == _Day.tomorrow,
+              onPressed: () => _pickDay(_Day.tomorrow),
+            ),
+            GpPill(
+              label: _day == _Day.other
+                  ? DateFormat('EEE d MMM').format(_date)
+                  : 'Another day…',
+              selected: _day == _Day.other,
+              onPressed: () => _pickDay(_Day.other),
+            ),
+          ],
+        ),
+        const _Label('How long can they stay?'),
+        Wrap(
+          spacing: GpSpace.sm,
+          runSpacing: GpSpace.sm,
+          children: [
+            for (final s in _Stay.values)
+              GpPill(
+                label: s.label,
+                selected: _stay == s,
+                onPressed: () => setState(() => _stay = s),
+              ),
+          ],
+        ),
+        if (_stay.duration != null) ...[
+          const SizedBox(height: GpSpace.md),
+          GpSurface(
+            padding: EdgeInsets.zero,
+            child: GpRow(
+              leading: Icon(GpIcons.clock, size: 20, color: colors.inkMuted),
+              title: 'Arriving from',
+              titleStyle: context.type.body,
+              trailing: Text(
+                formatMinutes(_start),
+                style: context.type.section,
+              ),
+              chevron: true,
+              onTap: _pickTime,
+            ),
+          ),
+        ],
+        const SizedBox(height: GpSpace.xxl),
+        GpSurface(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              GpSwitchRow(
+                title: 'Coming by car',
+                subtitle: 'Guards can match the registration at the gate',
+                value: _byCar,
+                onChanged: (v) => setState(() => _byCar = v),
+              ),
+              if (_byCar)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    GpSpace.lg,
+                    0,
+                    GpSpace.lg,
+                    GpSpace.lg,
+                  ),
+                  child: GpField(
+                    controller: _reg,
+                    label: 'Registration number',
+                    hint: 'e.g. HN 42 KP GP',
+                    textCapitalization: TextCapitalization.characters,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
 
     return PopScope(
       canPop: !_saving,
@@ -199,11 +350,39 @@ class _InviteFormScreenState extends State<InviteFormScreen> {
         avoidKeyboard: true,
         header: const GpHeader(title: 'New invite'),
         bottomBar: GpBottomBar(
-          child: GpButton(
-            label: 'Create invite',
-            size: GpButtonSize.large,
-            loading: _saving,
-            onPressed: _valid && !startsInPast ? _submit : null,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    startsInPast ? GpIcons.alert : GpIcons.calendarCheck,
+                    size: 16,
+                    color: tone,
+                  ),
+                  const SizedBox(width: GpSpace.sm),
+                  Flexible(
+                    child: Text(
+                      startsInPast
+                          ? 'That start time has passed. Pick a later one.'
+                          : _validity,
+                      style: context.type.small
+                          .weighted(FontWeight.w600)
+                          .copyWith(color: tone),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: GpSpace.md),
+              GpButton(
+                label: 'Create invite',
+                size: GpButtonSize.large,
+                loading: _saving,
+                onPressed: _valid && !startsInPast ? _submit : null,
+              ),
+            ],
           ),
         ),
         child: ListView(
@@ -217,132 +396,48 @@ class _InviteFormScreenState extends State<InviteFormScreen> {
           children: [
             GpField(
               controller: _name,
-              label: 'Visitor’s name',
+              label: 'Full name',
               autofocus: widget.initial == null,
               textCapitalization: TextCapitalization.words,
-              textInputAction: TextInputAction.next,
+              textInputAction: TextInputAction.done,
               autofillHints: const [AutofillHints.name],
             ),
             const SizedBox(height: GpSpace.lg),
-            GpField(
-              controller: _phone,
-              label: 'Mobile number (optional)',
-              helper: 'Saved on their visitor profile.',
-              keyboardType: TextInputType.phone,
-              autofillHints: const [AutofillHints.telephoneNumber],
-            ),
-            const _Label('When are they coming?'),
-            Wrap(
-              spacing: GpSpace.sm,
-              runSpacing: GpSpace.sm,
-              children: [
-                GpPill(
-                  label: 'Today',
-                  selected: _day == _Day.today,
-                  onPressed: () => _pickDay(_Day.today),
-                ),
-                GpPill(
-                  label: 'Tomorrow',
-                  selected: _day == _Day.tomorrow,
-                  onPressed: () => _pickDay(_Day.tomorrow),
-                ),
-                GpPill(
-                  label: _day == _Day.other
-                      ? DateFormat('EEE d MMM').format(_date)
-                      : 'Another day…',
-                  selected: _day == _Day.other,
-                  onPressed: () => _pickDay(_Day.other),
-                ),
-              ],
-            ),
-            const SizedBox(height: GpSpace.md),
             GpSurface(
               padding: EdgeInsets.zero,
               child: GpRow(
-                leading: Icon(GpIcons.clock, size: 20, color: colors.inkMuted),
-                title: 'Arriving from',
-                titleStyle: context.type.body,
-                trailing: Text(
-                  formatMinutes(_start),
-                  style: context.type.section,
+                leading: Icon(
+                  GpIcons.options,
+                  size: 20,
+                  color: colors.inkMuted,
                 ),
-                chevron: true,
-                onTap: _pickTime,
+                title: _advanced ? 'Fewer options' : 'More options',
+                titleStyle: context.type.body,
+                subtitle: _advanced ? null : _optionsSummary,
+                trailing: AnimatedRotation(
+                  turns: _advanced ? 0.5 : 0,
+                  duration: GpMotion.base,
+                  curve: GpMotion.curve,
+                  child: Icon(
+                    GpIcons.chevronDown,
+                    size: 20,
+                    color: colors.inkFaint,
+                  ),
+                ),
+                onTap: _toggleAdvanced,
               ),
             ),
-            const _Label('How long can they stay?'),
-            Wrap(
-              spacing: GpSpace.sm,
-              runSpacing: GpSpace.sm,
-              children: [
-                for (final s in _Stay.values)
-                  GpPill(
-                    label: s.label,
-                    selected: _stay == s,
-                    onPressed: () => setState(() => _stay = s),
-                  ),
-              ],
-            ),
-            const SizedBox(height: GpSpace.lg),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: GpSpace.lg,
-                vertical: GpSpace.md,
+            if (MediaQuery.disableAnimationsOf(context))
+              _advanced ? options : const SizedBox.shrink()
+            else
+              AnimatedSize(
+                duration: GpMotion.slow,
+                curve: GpMotion.curveInOut,
+                alignment: Alignment.topCenter,
+                child: _advanced
+                    ? options
+                    : const SizedBox(width: double.infinity),
               ),
-              decoration: BoxDecoration(
-                color: startsInPast ? colors.warningSoft : colors.accentSoft,
-                borderRadius: BorderRadius.circular(GpRadius.md),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    startsInPast ? GpIcons.alert : GpIcons.calendarCheck,
-                    size: 18,
-                    color: startsInPast ? colors.warning : colors.accent,
-                  ),
-                  const SizedBox(width: GpSpace.sm),
-                  Expanded(
-                    child: Text(
-                      startsInPast
-                          ? 'That start time has passed. Pick a later one.'
-                          : 'Valid ${windowLabel(_from, _until)}',
-                      style: context.type.bodyStrong.copyWith(
-                        color: startsInPast ? colors.warning : colors.accent,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const _Label('Options'),
-            GpSurface(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  GpSwitchRow(
-                    title: 'Coming by car',
-                    subtitle: 'Guards can match the registration at the gate',
-                    value: _byCar,
-                    onChanged: (v) => setState(() => _byCar = v),
-                  ),
-                  if (_byCar)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        GpSpace.lg,
-                        0,
-                        GpSpace.lg,
-                        GpSpace.lg,
-                      ),
-                      child: GpField(
-                        controller: _reg,
-                        label: 'Registration number',
-                        hint: 'e.g. HN 42 KP GP',
-                        textCapitalization: TextCapitalization.characters,
-                      ),
-                    ),
-                ],
-              ),
-            ),
           ],
         ),
       ),
@@ -381,7 +476,7 @@ class InviteCreatedScreen extends StatelessWidget {
           children: [
             GpButton(
               label: 'Copy invite message',
-              icon: GpIcons.copy,
+              icon: GpIcons.share,
               size: GpButtonSize.large,
               onPressed: () => shareInvite(context, invite, site.name),
             ),
@@ -397,28 +492,29 @@ class InviteCreatedScreen extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(
           GpSpace.gutter,
-          GpSpace.xxxl * 2,
+          GpSpace.xxxl,
           GpSpace.gutter,
           GpSpace.xxl,
         ),
         children: [
-          const Center(
-            child: IconBadge(icon: GpIcons.check, tone: Tone.accent, size: 88),
-          ),
-          const SizedBox(height: GpSpace.xxl),
-          Text(
-            'Invite ready',
-            style: context.type.display,
-            textAlign: TextAlign.center,
+          Row(
+            children: [
+              const IconBadge(icon: GpIcons.check, tone: Tone.accent, size: 44),
+              const SizedBox(width: GpSpace.md),
+              Expanded(
+                child: Text('Invite ready', style: context.type.display),
+              ),
+            ],
           ),
           const SizedBox(height: GpSpace.sm),
           Text(
-            'Copy the message and send it to $first yourself. '
-            'The link and gate code are ready to use.',
-            textAlign: TextAlign.center,
+            'Send $first the invite message. Its link opens this same QR '
+            'code for the gate.',
             style: context.type.body.copyWith(color: colors.inkMuted),
           ),
-          const SizedBox(height: GpSpace.xxl),
+          const SizedBox(height: GpSpace.xl),
+          GatePass(code: invite.code),
+          const SizedBox(height: GpSpace.lg),
           GpGroup(
             inset: GpSpace.lg,
             children: [
@@ -426,16 +522,6 @@ class InviteCreatedScreen extends StatelessWidget {
                 icon: GpIcons.clock,
                 label: 'Valid',
                 value: inviteValidityLabel(invite),
-              ),
-              DetailRow(
-                icon: GpIcons.keypad,
-                label: 'Gate code',
-                value: formatCode(invite.code),
-              ),
-              DetailRow(
-                icon: GpIcons.link,
-                label: 'Link',
-                value: invite.link.replaceFirst('https://', ''),
               ),
             ],
           ),

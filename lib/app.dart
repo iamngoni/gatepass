@@ -105,14 +105,14 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
-    // Pages scroll under the bar; their lists end with scrollEnd() so the
-    // last row clears it.
+    // Pages scroll under the floating bar; their lists end with scrollEnd()
+    // so the last row clears it.
     return Stack(
       children: [
         MediaQuery(
           data: media.copyWith(
             padding: media.padding.copyWith(
-              bottom: media.padding.bottom + GpSizes.tabBar - 8,
+              bottom: GpTabBar.extent(media.padding.bottom),
             ),
           ),
           child: IndexedStack(

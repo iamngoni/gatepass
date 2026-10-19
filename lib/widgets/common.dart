@@ -148,7 +148,7 @@ extension InviteStatusUi on InviteStatus {
   };
 
   Tone get tone => switch (this) {
-    InviteStatus.active => Tone.info,
+    InviteStatus.active => Tone.accent,
     InviteStatus.revoked => Tone.danger,
     InviteStatus.expired => Tone.neutral,
   };

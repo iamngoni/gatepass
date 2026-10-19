@@ -15,4 +15,5 @@ Trademarks and artwork belong to their respective owners.
 | `pnp-asap.jpg` | Pick n Pay asap + SmartShopper | `za.co.pnp.picknpay` |
 | `woolies-dash.jpg` | Woolworths (Pty) Ltd | `com.virtualmobiletech.wfs` |
 | `takealot.jpg` | Takealot - Mobile Shopping App | `com.takealot.iphone` |
+| `amazon.jpg` | Amazon - Shopping made easy | `com.amazon.Amazon` |
 | `courier-guy.jpg` | Courier Guy | `com.pudo-sa.pudo` |

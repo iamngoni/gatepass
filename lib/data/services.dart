@@ -11,14 +11,18 @@ class DeliveryService {
     this.name,
     this.kind,
     this.window,
-    this.iconAsset,
-  );
+    this.iconAsset, {
+    String? shortName,
+  }) : shortName = shortName ?? name;
 
   final String id;
   final String name;
   final ServiceKind kind;
   final Duration window;
   final String iconAsset;
+
+  /// What fits under a quick tile on Home.
+  final String shortName;
 }
 
 const deliveryServices = [
@@ -56,6 +60,7 @@ const deliveryServices = [
     ServiceKind.groceries,
     Duration(hours: 1),
     'assets/icons/services/sixty60.jpg',
+    shortName: 'Sixty60',
   ),
   DeliveryService(
     'pnp-asap',
@@ -63,6 +68,7 @@ const deliveryServices = [
     ServiceKind.groceries,
     Duration(hours: 1),
     'assets/icons/services/pnp-asap.jpg',
+    shortName: 'PnP asap!',
   ),
   DeliveryService(
     'woolies-dash',
@@ -70,6 +76,14 @@ const deliveryServices = [
     ServiceKind.groceries,
     Duration(hours: 1),
     'assets/icons/services/woolies-dash.jpg',
+    shortName: 'Woolies',
+  ),
+  DeliveryService(
+    'amazon',
+    'Amazon',
+    ServiceKind.parcel,
+    Duration(hours: 4),
+    'assets/icons/services/amazon.jpg',
   ),
   DeliveryService(
     'takealot',

@@ -25,88 +25,97 @@ class HomeScreen extends StatelessWidget {
     final live = state.live;
 
     return GpScreen(
-      child: ListView(
-        padding: EdgeInsets.only(bottom: scrollEnd(context)),
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              GpSpace.gutter - GpSpace.sm,
-              GpSpace.sm,
-              GpSpace.sm,
-              0,
-            ),
-            child: Row(
-              children: [
-                const Expanded(child: _EstateHeading()),
-                GpIconButton(
-                  icon: GpIcons.refresh,
-                  label: 'Refresh',
-                  onPressed: () => state.refresh(),
-                ),
-                GpIconButton(
-                  icon: GpIcons.bell,
-                  label: state.unreadCount == 0
-                      ? 'Notifications'
-                      : '${state.unreadCount} unread notifications',
-                  badge: state.unreadCount,
-                  onPressed: () => pushPage<void>(
-                    context,
-                    (_) => const NotificationsScreen(),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              GpSpace.gutter,
-              GpSpace.md,
-              GpSpace.gutter,
-              GpSpace.xl,
-            ),
-            child: Text(
-              '${greeting(DateTime.now())}, ${state.resident!.firstName}',
-              style: context.type.display,
-            ),
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: GpSpace.gutter),
-            child: _QuickInvitePanel(),
-          ),
-          SectionHeading(
-            'Live invites',
-            action: 'All visitors',
-            onAction: () => onOpenTab(1),
-          ),
-          if (live.isEmpty)
+      child: GpRefresh(
+        onRefresh: () => refreshInvites(context),
+        child: ListView(
+          physics: GpRefresh.physics,
+          padding: EdgeInsets.only(bottom: scrollEnd(context)),
+          children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: GpSpace.gutter),
-              child: Text(
-                'No live invites. Tap a tile above to let someone in.',
-                style: context.type.body.copyWith(color: colors.inkMuted),
+              padding: const EdgeInsets.fromLTRB(
+                GpSpace.gutter - GpSpace.sm,
+                GpSpace.sm,
+                GpSpace.sm,
+                0,
               ),
-            )
-          else ...[
-            TileGroup(
-              children: [
-                for (final i in live.take(5))
-                  InviteTile(invite: i, revocable: true),
-              ],
+              child: Row(
+                children: [
+                  const Expanded(child: _EstateHeading()),
+                  GpIconButton(
+                    icon: GpIcons.bell,
+                    label: state.unreadCount == 0
+                        ? 'Notifications'
+                        : '${state.unreadCount} unread notifications',
+                    badge: state.unreadCount,
+                    onPressed: () => pushPage<void>(
+                      context,
+                      (_) => const NotificationsScreen(),
+                    ),
+                  ),
+                ],
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 GpSpace.gutter,
-                GpSpace.sm,
+                GpSpace.md,
                 GpSpace.gutter,
-                0,
+                GpSpace.xl,
               ),
               child: Text(
-                'Swipe an invite left to revoke it.',
-                style: context.type.caption.copyWith(color: colors.inkFaint),
+                '${greeting(DateTime.now())}, ${state.resident!.firstName}',
+                style: context.type.display,
               ),
             ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: GpSpace.gutter),
+              child: _QuickInvitePanel(),
+            ),
+            SectionHeading(
+              'Live invites',
+              action: 'All visitors',
+              onAction: () => onOpenTab(1),
+            ),
+            if (live.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: GpSpace.gutter),
+                child: GpGroup(
+                  inset: GpSpace.lg,
+                  children: [
+                    GpRow(
+                      leading: IconBadge(
+                        icon: GpIcons.calendarCheck,
+                        tone: Tone.accent,
+                        size: 40,
+                      ),
+                      title: 'No live invites',
+                      subtitle: 'Tap a tile above to let someone in.',
+                    ),
+                  ],
+                ),
+              )
+            else ...[
+              TileGroup(
+                children: [
+                  for (final i in live.take(5))
+                    InviteTile(invite: i, revocable: true),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  GpSpace.gutter,
+                  GpSpace.sm,
+                  GpSpace.gutter,
+                  0,
+                ),
+                child: Text(
+                  'Swipe an invite left to revoke it.',
+                  style: context.type.caption.copyWith(color: colors.inkFaint),
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -163,7 +172,7 @@ class _QuickInvitePanel extends StatelessWidget {
             children: [
               for (final s in state.servicesByUse)
                 _QuickTile(
-                  label: s.name,
+                  label: s.shortName,
                   semantics: 'Create a gate code for ${s.name}',
                   onTap: () => quickInvite(context, state.serviceDraft(s)),
                   onLongPress: () =>

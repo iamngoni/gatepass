@@ -23,6 +23,8 @@ abstract final class GpIcons {
   static const error = LucideIcons.circleAlert;
   static const chevronLeft = LucideIcons.chevronLeft;
   static const chevronRight = LucideIcons.chevronRight;
+  static const chevronDown = LucideIcons.chevronDown;
+  static const options = LucideIcons.slidersHorizontal;
   static const refresh = LucideIcons.refreshCw;
 
   // Header.

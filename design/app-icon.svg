@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0.2" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#2E7A62"/>
+      <stop offset="0.5" stop-color="#1D4B3D"/>
+      <stop offset="1" stop-color="#0D261E"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#A8DDC2" stop-opacity="0.22"/>
+      <stop offset="0.6" stop-color="#A8DDC2" stop-opacity="0.07"/>
+      <stop offset="1" stop-color="#A8DDC2" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sheen" cx="0.25" cy="0.05" r="0.7">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="light" cx="0.5" cy="0.55" r="0.5">
+      <stop offset="0" stop-color="#FFF8E6"/>
+      <stop offset="0.3" stop-color="#FBE3A6" stop-opacity="0.95"/>
+      <stop offset="0.65" stop-color="#F2C978" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#F2C978" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="spill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FBE3A6" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#FBE3A6" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="leafL" x1="0" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#FBFFFD"/>
+      <stop offset="0.45" stop-color="#CDEEDD"/>
+      <stop offset="1" stop-color="#93D0B3"/>
+    </linearGradient>
+    <linearGradient id="leafR" x1="1" y1="0" x2="0.1" y2="1">
+      <stop offset="0" stop-color="#E4F6EC"/>
+      <stop offset="0.45" stop-color="#B9E4CE"/>
+      <stop offset="1" stop-color="#7FC2A3"/>
+    </linearGradient>
+    <linearGradient id="panelL" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#A9DCC3"/>
+      <stop offset="1" stop-color="#C9ECDA"/>
+    </linearGradient>
+    <linearGradient id="panelR" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#97D1B6"/>
+      <stop offset="1" stop-color="#B6E2CC"/>
+    </linearGradient>
+    <!-- The inner edge of each leaf catches the light. -->
+    <linearGradient id="edgeL" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0.75" stop-color="#FFF4D6" stop-opacity="0"/>
+      <stop offset="1" stop-color="#FFF4D6" stop-opacity="0.75"/>
+    </linearGradient>
+    <linearGradient id="edgeR" x1="1" y1="0" x2="0" y2="0">
+      <stop offset="0.75" stop-color="#FFF4D6" stop-opacity="0"/>
+      <stop offset="1" stop-color="#FFF4D6" stop-opacity="0.75"/>
+    </linearGradient>
+
+    <filter id="blur40" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="40"/>
+    </filter>
+    <filter id="blur18" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+    <filter id="lift" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="26" stdDeviation="28" flood-color="#04110C" flood-opacity="0.5"/>
+    </filter>
+    <filter id="inset" x="-20%" y="-20%" width="140%" height="140%">
+      <feOffset dx="0" dy="6"/>
+      <feGaussianBlur stdDeviation="6" result="o"/>
+      <feComposite in="SourceAlpha" in2="o" operator="out" result="ring"/>
+      <feFlood flood-color="#2E6E57" flood-opacity="0.45"/>
+      <feComposite in2="ring" operator="in" result="shade"/>
+      <feComposite in="SourceGraphic" in2="shade" operator="over"/>
+    </filter>
+  </defs>
+
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <rect width="1024" height="1024" fill="url(#sheen)"/>
+  <circle cx="512" cy="520" r="430" fill="url(#halo)"/>
+
+  <g transform="translate(512 525) scale(1.07) translate(-512 -525)">
+  <!-- Light through the gap and onto the ground -->
+  <ellipse cx="512" cy="540" rx="160" ry="350" fill="url(#light)" filter="url(#blur18)"/>
+  <path d="M478 826 L546 826 L720 980 L304 980 Z" fill="url(#spill)" filter="url(#blur40)"/>
+
+  <!-- Contact shadow under the gate -->
+  <ellipse cx="512" cy="842" rx="270" ry="22" fill="#04110C" opacity="0.45" filter="url(#blur18)"/>
+
+  <!-- Left leaf, swung open on its outer hinge -->
+  <g filter="url(#lift)">
+    <path d="M262 826 V466 A242 242 0 0 1 458 207 Q468 206 468 217 V836 Q468 846 458 845 L276 830 Q262 829 262 815 Z"
+          fill="url(#leafL)"/>
+  </g>
+  <path d="M262 826 V466 A242 242 0 0 1 458 207 Q468 206 468 217 V836 Q468 846 458 845 L276 830 Q262 829 262 815 Z"
+        fill="url(#edgeL)"/>
+  <path d="M318 780 V478 A170 170 0 0 1 412 321 Q422 318 422 329 V782 Q422 794 410 793 L330 790 Q318 790 318 780 Z"
+        fill="url(#panelL)" filter="url(#inset)"/>
+
+  <!-- Right leaf -->
+  <g filter="url(#lift)">
+    <path d="M762 826 V466 A242 242 0 0 0 566 207 Q556 206 556 217 V836 Q556 846 566 845 L748 830 Q762 829 762 815 Z"
+          fill="url(#leafR)"/>
+  </g>
+  <path d="M762 826 V466 A242 242 0 0 0 566 207 Q556 206 556 217 V836 Q556 846 566 845 L748 830 Q762 829 762 815 Z"
+        fill="url(#edgeR)"/>
+  <path d="M706 780 V478 A170 170 0 0 0 612 321 Q602 318 602 329 V782 Q602 794 614 793 L694 790 Q706 790 706 780 Z"
+        fill="url(#panelR)" filter="url(#inset)"/>
+
+  <!-- A bright core where the leaves part -->
+  <ellipse cx="512" cy="560" rx="30" ry="270" fill="#FFF8E6" opacity="0.95" filter="url(#blur18)"/>
+</g>
+</svg>

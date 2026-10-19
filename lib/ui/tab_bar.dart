@@ -1,3 +1,6 @@
+import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/widgets.dart';
 
 import 'icons.dart';
@@ -11,8 +14,9 @@ class GpTab {
   final String label;
 }
 
-/// The bottom bar: tabs either side of a centred add action that lives in
-/// the bar itself, not a floating button.
+/// The bottom bar: a floating capsule of tabs, with the add action as its
+/// own round button at the thumb's end of the row rather than wedged
+/// between tabs.
 class GpTabBar extends StatelessWidget {
   const GpTabBar({
     super.key,
@@ -29,31 +33,46 @@ class GpTabBar extends StatelessWidget {
   final VoidCallback onAdd;
   final String addLabel;
 
+  /// The capsule floats this far above the bottom edge: just inside the
+  /// home indicator's area, or a small margin on phones without one.
+  static double bottomGap(double safeBottom) =>
+      safeBottom > 0 ? math.max(safeBottom - 10, GpSpace.md) : GpSpace.md;
+
+  /// Everything the bar covers, measured from the bottom of the screen.
+  static double extent(double safeBottom) =>
+      bottomGap(safeBottom) + GpSizes.tabBar;
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final half = tabs.length ~/ 2;
-    Widget tab(int i) => Expanded(
-      child: _TabItem(
-        tab: tabs[i],
-        selected: i == selectedIndex,
-        onTap: () => onSelect(i),
-      ),
-    );
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colors.surface,
-        border: Border(
-          top: BorderSide(color: colors.line, width: GpSizes.hairline),
+    final safeBottom = MediaQuery.paddingOf(context).bottom;
+    // The capsule has a fixed height; past this, labels would overflow it.
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.5,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          GpSpace.gutter,
+          0,
+          GpSpace.gutter,
+          bottomGap(safeBottom),
         ),
-      ),
-      child: SafeArea(
-        top: false,
         child: SizedBox(
-          height: GpSizes.tabBar - 8,
+          height: GpSizes.tabBar,
           child: Row(
             children: [
-              for (var i = 0; i < half; i++) tab(i),
+              Expanded(
+                child: _Glass(
+                  child: Padding(
+                    padding: const EdgeInsets.all(_TabTrack.inset),
+                    child: _TabTrack(
+                      tabs: tabs,
+                      selectedIndex: selectedIndex,
+                      onSelect: onSelect,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: GpSpace.md),
               Semantics(
                 button: true,
                 label: addLabel,
@@ -61,22 +80,112 @@ class GpTabBar extends StatelessWidget {
                 child: Pressable(
                   onTap: onAdd,
                   child: Container(
-                    width: 58,
-                    height: 42,
-                    margin: const EdgeInsets.symmetric(horizontal: GpSpace.xs),
+                    width: GpSizes.tabBar,
+                    height: GpSizes.tabBar,
                     decoration: BoxDecoration(
                       color: colors.accent,
-                      borderRadius: BorderRadius.circular(15),
+                      shape: BoxShape.circle,
+                      boxShadow: colors.floatShadow,
                     ),
-                    child: Icon(GpIcons.add, color: colors.onAccent, size: 24),
+                    child: Icon(GpIcons.add, color: colors.onAccent, size: 28),
                   ),
                 ),
               ),
-              for (var i = half; i < tabs.length; i++) tab(i),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Frosted surface for chrome that floats over scrolling content.
+class _Glass extends StatelessWidget {
+  const _Glass({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final shape = BorderRadius.circular(GpRadius.pill);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: shape,
+        boxShadow: colors.floatShadow,
+      ),
+      child: ClipRRect(
+        borderRadius: shape,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: colors.chrome,
+              borderRadius: shape,
+              border: Border.all(
+                color: colors.lineStrong,
+                width: GpSizes.hairline,
+              ),
+            ),
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The tabs over a sliding highlight, like the segmented control's thumb.
+class _TabTrack extends StatelessWidget {
+  const _TabTrack({
+    required this.tabs,
+    required this.selectedIndex,
+    required this.onSelect,
+  });
+
+  final List<GpTab> tabs;
+  final int selectedIndex;
+  final ValueChanged<int> onSelect;
+
+  static const inset = 5.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth / tabs.length;
+        return Stack(
+          children: [
+            AnimatedPositioned(
+              duration: GpMotion.slow,
+              curve: GpMotion.riseCurve,
+              left: width * selectedIndex,
+              top: 0,
+              bottom: 0,
+              width: width,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: colors.accentSoft,
+                  borderRadius: BorderRadius.circular(GpRadius.pill),
+                ),
+              ),
+            ),
+            Row(
+              children: [
+                for (var i = 0; i < tabs.length; i++)
+                  Expanded(
+                    child: _TabItem(
+                      tab: tabs[i],
+                      selected: i == selectedIndex,
+                      onTap: () => onSelect(i),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -95,7 +204,7 @@ class _TabItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final color = selected ? colors.accent : colors.inkFaint;
+    final color = selected ? colors.accent : colors.inkMuted;
     return Semantics(
       selected: selected,
       button: true,
@@ -108,10 +217,10 @@ class _TabItem extends StatelessWidget {
           children: [
             Icon(tab.icon, size: 22, color: color),
             const SizedBox(height: 3),
-            Text(
-              tab.label,
-              maxLines: 1,
+            AnimatedDefaultTextStyle(
+              duration: GpMotion.fast,
               style: context.type.navLabel.copyWith(color: color),
+              child: Text(tab.label, maxLines: 1),
             ),
           ],
         ),

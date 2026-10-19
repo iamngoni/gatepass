@@ -5,6 +5,7 @@ import '../../state/app_state.dart';
 import '../../ui/ui.dart';
 import '../../util/format.dart';
 import '../../widgets/common.dart';
+import '../../widgets/gate_pass.dart';
 import 'invite_actions.dart';
 
 class InviteDetailScreen extends StatelessWidget {
@@ -44,70 +45,83 @@ class InviteDetailScreen extends StatelessWidget {
             ),
             child: Row(
               children: [
-                InviteAvatar(invite: invite, size: 64),
+                InviteAvatar(invite: invite, size: 56),
                 const SizedBox(width: GpSpace.lg),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(invite.visitorName, style: context.type.title),
-                      const SizedBox(height: GpSpace.sm),
-                      StatusPill(
-                        label: invite.status.label,
-                        tone: invite.status.tone,
+                      Text(invite.displayName, style: context.type.title),
+                      const SizedBox(height: GpSpace.xxs),
+                      Text(
+                        inviteValidityLabel(invite),
+                        style: context.type.small.copyWith(
+                          color: context.colors.inkMuted,
+                        ),
                       ),
                     ],
                   ),
+                ),
+                const SizedBox(width: GpSpace.sm),
+                StatusPill(
+                  label: invite.status.label,
+                  tone: invite.status.tone,
                 ),
               ],
             ),
           ),
           if (live) ...[
-            const SectionHeading('Gate code'),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: GpSpace.gutter),
-              child: GpSurface(
-                padding: const EdgeInsets.all(GpSpace.xl),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            formatCode(invite.code),
-                            style: context.type.code,
-                          ),
-                        ),
-                        GpIconButton(
-                          icon: GpIcons.copy,
-                          label: 'Copy code',
-                          onPressed: () async {
-                            await Clipboard.setData(
-                              ClipboardData(text: invite.code),
-                            );
-                            if (context.mounted) {
-                              Toast.show(context, 'Code copied');
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: GpSpace.xs),
-                    Text(
-                      'Share the link or code with ${invite.firstName}.',
-                      style: context.type.caption,
-                    ),
-                    const SizedBox(height: GpSpace.lg),
-                    GpButton(
-                      label: 'Copy invite message',
+              padding: const EdgeInsets.fromLTRB(
+                GpSpace.gutter,
+                GpSpace.xxl,
+                GpSpace.gutter,
+                0,
+              ),
+              child: GatePass(
+                code: invite.code,
+                caption: invite.isService
+                    ? 'The guard scans this, or the driver gives the code.'
+                    : 'Show this at the gate, or send ${invite.firstName} '
+                          'the invite.',
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                GpSpace.gutter,
+                GpSpace.md,
+                GpSpace.gutter,
+                0,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GpButton(
+                      label: 'Copy code',
                       icon: GpIcons.copy,
-                      variant: GpButtonVariant.soft,
+                      variant: GpButtonVariant.secondary,
+                      onPressed: invite.code.isEmpty
+                          ? null
+                          : () async {
+                              await Clipboard.setData(
+                                ClipboardData(text: invite.code),
+                              );
+                              if (context.mounted) {
+                                Toast.show(context, 'Code copied');
+                              }
+                            },
+                    ),
+                  ),
+                  const SizedBox(width: GpSpace.sm),
+                  Expanded(
+                    child: GpButton(
+                      label: 'Copy invite',
+                      icon: GpIcons.share,
                       onPressed: () =>
                           shareInvite(context, invite, state.site.name),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -117,11 +131,6 @@ class InviteDetailScreen extends StatelessWidget {
             child: GpGroup(
               inset: GpSpace.lg,
               children: [
-                DetailRow(
-                  icon: GpIcons.clock,
-                  label: 'Valid',
-                  value: inviteValidityLabel(invite),
-                ),
                 if (invite.phone != null)
                   DetailRow(
                     icon: GpIcons.phone,
