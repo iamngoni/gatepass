@@ -5,6 +5,7 @@
 
 interface Env {
   BACKUPS: KVNamespace;
+  LIMITER: RateLimit;
   FIREBASE_PROJECT_ID: string;
 }
 
@@ -23,13 +24,22 @@ export default {
     const url = new URL(request.url);
     if (url.pathname !== '/v1/backup') return json({ error: 'not found' }, 404);
 
+    const ip = request.headers.get('cf-connecting-ip') ?? 'unknown';
+    if (!(await env.LIMITER.limit({ key: `ip:${ip}` })).success) {
+      return json({ error: 'slow down' }, 429);
+    }
+
     let uid: string;
     try {
       uid = await verify(request.headers.get('authorization'), env);
     } catch {
       return json({ error: 'unauthorized' }, 401);
     }
-    const key = `backup:${await sha256(uid)}`;
+    const hashed = await sha256(uid);
+    if (!(await env.LIMITER.limit({ key: `uid:${hashed}` })).success) {
+      return json({ error: 'slow down' }, 429);
+    }
+    const key = `backup:${hashed}`;
 
     switch (request.method) {
       case 'GET': {
