@@ -1,4 +1,11 @@
-// Gatepass — invite_form_bar.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  invite_form_bar.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:flutter/widgets.dart';
 
 import '../../../core/utils/date_helpers.dart';

@@ -1,4 +1,11 @@
-// Gatepass — backup_bloc_extensions.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  backup_bloc_extensions.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:dartz/dartz.dart';
 
 import '../../../backup/models/data/backup_action.dart';

@@ -1,4 +1,11 @@
-// Gatepass — gp_selection_gestures.dart. Created 2026-10-18.
+//
+//  Gatepass
+//  gp_selection_gestures.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 

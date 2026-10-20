@@ -1,4 +1,11 @@
-// Gatepass — invite_form_data.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  invite_form_data.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../core/utils/date_helpers.dart';

@@ -1,3 +1,11 @@
+//
+//  Gatepass
+//  auth.rs
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 //! Verifies ATG's Firebase ID tokens and turns them into a [`VerifiedAccount`].
 //!
 //! Only this module can construct a `VerifiedAccount`, so any handler that

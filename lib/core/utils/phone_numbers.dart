@@ -1,4 +1,10 @@
-// Gatepass — phone_numbers.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  phone_numbers.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
 
 /// To South African E.164. Drops spaces and punctuation, then a leading
 /// country code and/or trunk '0', and re-prefixes +27. So

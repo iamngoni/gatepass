@@ -1,4 +1,11 @@
-// Gatepass — atg_harness.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  atg_harness.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:dio/dio.dart';
 import 'package:gatepass/auth/models/data/atg_session.dart';
 import 'package:gatepass/core/configs/atg_config.dart';

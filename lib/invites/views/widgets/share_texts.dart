@@ -1,4 +1,11 @@
-// Gatepass — share_texts.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  share_texts.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import '../../../core/utils/gp_format.dart';
 import '../../models/data/invite.dart';
 

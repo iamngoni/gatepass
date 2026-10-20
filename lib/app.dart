@@ -1,4 +1,11 @@
-// Gatepass — app.dart. Created 2026-10-18.
+//
+//  Gatepass
+//  app.dart
+//
+//  Created by Ngonidzashe Mangudya on 18/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 // The app root is a WidgetsApp, the unstyled foundation: Gatepass's own
 // tokens, type and routes, with no MaterialApp or ThemeData underneath.
 import 'package:flutter/foundation.dart';

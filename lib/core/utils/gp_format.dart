@@ -1,4 +1,11 @@
-// Gatepass — gp_format.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  gp_format.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:intl/intl.dart';
 
 import '../../invites/models/data/invite.dart';

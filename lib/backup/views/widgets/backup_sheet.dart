@@ -1,4 +1,11 @@
-// Gatepass — backup_sheet.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  backup_sheet.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 // Cloud backup: turning it on shows a new recovery phrase, a phone that finds
 // an existing backup asks for that phrase, and an active backup can be run or
 // turned off.

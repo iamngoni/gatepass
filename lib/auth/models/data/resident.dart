@@ -1,4 +1,11 @@
-// Gatepass — resident.dart. Created 2026-10-18.
+//
+//  Gatepass
+//  resident.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'resident.freezed.dart';

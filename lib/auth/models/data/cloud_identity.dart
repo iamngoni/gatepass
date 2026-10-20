@@ -1,4 +1,11 @@
-// Gatepass — cloud_identity.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  cloud_identity.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'cloud_identity.freezed.dart';

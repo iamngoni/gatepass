@@ -1,4 +1,11 @@
-// Gatepass — atg_redactor.dart. Created 2026-10-18.
+//
+//  Gatepass
+//  atg_redactor.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'dart:convert';
 
 /// Masks credentials and phone numbers in logged ATG traffic, keeping the

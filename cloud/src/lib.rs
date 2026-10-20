@@ -1,3 +1,11 @@
+//
+//  Gatepass
+//  lib.rs
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 //! Gatepass cloud backup: one end-to-end encrypted blob per ATG account.
 //!
 //! The app seals the blob on the phone with a key from the resident's

@@ -1,4 +1,11 @@
-// Gatepass — gp_colors.dart. Created 2026-10-18.
+//
+//  Gatepass
+//  gp_colors.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 // The single source of Gatepass's presentation tokens, after dueo's
 // zero-Material system. Nothing here imports Material: these values replace
 // framework defaults rather than theme them, and no screen hard-codes a

@@ -1,4 +1,11 @@
-// Gatepass — gp_sheet_page.dart. Created 2026-10-18.
+//
+//  Gatepass
+//  gp_sheet_page.dart
+//
+//  Created by Ngonidzashe Mangudya on 18/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:flutter/widgets.dart';
 
 import '../../configs/gp_motion.dart';

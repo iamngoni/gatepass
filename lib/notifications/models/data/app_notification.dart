@@ -1,4 +1,11 @@
-// Gatepass — app_notification.dart. Created 2026-10-18.
+//
+//  Gatepass
+//  app_notification.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import 'notification_kind.dart';

@@ -1,4 +1,11 @@
-// Gatepass — atg_account_service.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  atg_account_service.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';

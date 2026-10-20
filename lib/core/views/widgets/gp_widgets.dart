@@ -1,4 +1,11 @@
-// Gatepass — gp_widgets.dart. Created 2026-10-18.
+//
+//  Gatepass
+//  gp_widgets.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 // Gatepass's own component kit. Screens import this instead of Material.
 export '../../configs/appearance.dart';
 export '../../configs/gp_colors.dart';

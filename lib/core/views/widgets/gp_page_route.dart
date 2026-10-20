@@ -1,4 +1,11 @@
-// Gatepass — gp_page_route.dart. Created 2026-10-18.
+//
+//  Gatepass
+//  gp_page_route.dart
+//
+//  Created by Ngonidzashe Mangudya on 18/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 // Page navigation. On iOS the framework's page transition is also the edge
 // swipe that takes someone back, so that one mixin is the only Cupertino
 // piece in the app; page content stays the app's own.

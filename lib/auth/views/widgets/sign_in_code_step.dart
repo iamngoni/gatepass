@@ -1,4 +1,11 @@
-// Gatepass — sign_in_code_step.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  sign_in_code_step.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

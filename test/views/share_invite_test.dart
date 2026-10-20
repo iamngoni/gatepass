@@ -1,4 +1,11 @@
-// Gatepass — share_invite_test.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  share_invite_test.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';

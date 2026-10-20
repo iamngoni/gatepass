@@ -1,4 +1,11 @@
-// Gatepass — invite_tile_content.dart. Created 2026-10-18.
+//
+//  Gatepass
+//  invite_tile_content.dart
+//
+//  Created by Ngonidzashe Mangudya on 18/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:flutter/widgets.dart';
 
 import '../../../core/configs/gp_icons.dart';

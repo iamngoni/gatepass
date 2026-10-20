@@ -1,4 +1,11 @@
-// Gatepass — quick_tile_row.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  quick_tile_row.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:flutter/widgets.dart';
 
 import '../../../core/views/widgets/gp_widgets.dart';

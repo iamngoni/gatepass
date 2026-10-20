@@ -1,3 +1,11 @@
+//
+//  Gatepass
+//  backup.rs
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 //! The backup record and the rules for replacing it.
 //!
 //! The blob is opaque ciphertext sealed on the phone; this module never looks

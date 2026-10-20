@@ -1,4 +1,11 @@
-// Gatepass — gp_icons.dart. Created 2026-10-18.
+//
+//  Gatepass
+//  gp_icons.dart
+//
+//  Created by Ngonidzashe Mangudya on 18/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 // The app's one icon family. Screens reference [GpIcons] only: the Lucide
 // font underneath is an implementation detail, and no Material icon font or
 // emoji is used as a designed mark.

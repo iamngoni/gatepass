@@ -1,4 +1,11 @@
-// Gatepass — gp_field.dart. Created 2026-10-18.
+//
+//  Gatepass
+//  gp_field.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 // A text field built on Flutter's unstyled EditableText, not TextField. The
 // label sits above the box, errors wrap beneath it, and selection keeps the
 // phone's own gestures and edit menu.

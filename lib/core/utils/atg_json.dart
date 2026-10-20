@@ -1,4 +1,11 @@
-// Gatepass — atg_json.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  atg_json.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 //
 // ATG's JSON is loosely shaped: the same value arrives under different keys,
 // as a number or a string, in seconds or milliseconds. These readers turn

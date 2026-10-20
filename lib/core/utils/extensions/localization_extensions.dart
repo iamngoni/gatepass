@@ -1,4 +1,11 @@
-// Gatepass — localization_extensions.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  localization_extensions.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:flutter/widgets.dart';
 
 import '../../../auth/models/data/otp_channel.dart';

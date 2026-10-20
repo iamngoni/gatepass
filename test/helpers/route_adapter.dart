@@ -1,4 +1,11 @@
-// Gatepass — route_adapter.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  route_adapter.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'dart:convert';
 import 'dart:typed_data';
 

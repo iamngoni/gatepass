@@ -1,4 +1,11 @@
-// Gatepass — invite_merge_test.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  invite_merge_test.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gatepass/core/services/secure_storage_service.dart';

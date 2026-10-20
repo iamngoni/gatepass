@@ -1,4 +1,11 @@
-// Gatepass — atg_config.dart. Created 2026-10-18.
+//
+//  Gatepass
+//  atg_config.dart
+//
+//  Created by Ngonidzashe Mangudya on 18/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 /// Live "At The Gate" (ATG Digital) backend, as recovered by static analysis
 /// of the official app (`net.atthegate.notification` v28.2.2, `libapp.so`),
 /// gathered in one place so the uncertain parts are a one-line fix once a real

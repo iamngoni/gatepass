@@ -1,4 +1,10 @@
-// Gatepass — invite_stay.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  invite_stay.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
 
 /// How long a new invite lasts. [duration] is null for the rest of the day.
 enum InviteStay {

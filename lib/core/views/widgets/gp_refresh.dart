@@ -1,4 +1,11 @@
-// Gatepass — gp_refresh.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  gp_refresh.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 // Pull-to-refresh without Material's RefreshIndicator: pull the list past its
 // top edge, let go, and the content holds down over a spinner until the
 // reload finishes.

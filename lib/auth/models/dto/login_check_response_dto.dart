@@ -1,4 +1,11 @@
-// Gatepass — login_check_response_dto.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  login_check_response_dto.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../core/configs/atg_config.dart';

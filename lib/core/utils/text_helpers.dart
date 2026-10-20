@@ -1,4 +1,10 @@
-// Gatepass — text_helpers.dart. Created 2026-10-18.
+//
+//  Gatepass
+//  text_helpers.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
 
 String initials(String name) {
   final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);

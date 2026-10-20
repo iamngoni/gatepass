@@ -1,4 +1,11 @@
-// Gatepass — toast.dart. Created 2026-10-18.
+//
+//  Gatepass
+//  toast.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 // One host for transient messages, in place of SnackBar: one visible message
 // at a time, repeats coalesce, and it sits at the top, clear of the tab bar,
 // the keyboard and any Save button.

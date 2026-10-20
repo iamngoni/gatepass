@@ -1,4 +1,11 @@
-// Gatepass — invite_detail_page.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  invite_detail_page.dart
+//
+//  Created by Ngonidzashe Mangudya on 18/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

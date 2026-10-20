@@ -1,4 +1,11 @@
-// Gatepass — json_converters.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  json_converters.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:json_annotation/json_annotation.dart';
 
 import 'atg_json.dart';

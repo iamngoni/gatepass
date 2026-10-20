@@ -1,4 +1,10 @@
-// Gatepass — gp_spacing.dart. Created 2026-10-18.
+//
+//  Gatepass
+//  gp_spacing.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
 
 /// Four-point spacing ramp.
 abstract final class GpSpace {

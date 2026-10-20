@@ -1,4 +1,11 @@
-// Gatepass — gp_sheet_route.dart. Created 2026-10-18.
+//
+//  Gatepass
+//  gp_sheet_route.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 // The app's own modal sheet: no Material sheet chrome. Safe area, keyboard,
 // grab handle, drag-to-dismiss and transitions are defined here once.
 import 'package:flutter/widgets.dart';

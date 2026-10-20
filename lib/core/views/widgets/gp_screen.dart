@@ -1,4 +1,11 @@
-// Gatepass — gp_screen.dart. Created 2026-10-18.
+//
+//  Gatepass
+//  gp_screen.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 // The screen shell and header, in place of Scaffold and AppBar. Big page
 // titles are drawn in the content itself; the header is a plain 56pt bar.
 import 'package:flutter/widgets.dart';

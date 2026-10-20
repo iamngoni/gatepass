@@ -1,4 +1,11 @@
-// Gatepass — injection.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  injection.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';

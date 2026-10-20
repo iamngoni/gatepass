@@ -1,4 +1,11 @@
-// Gatepass — gp_qr_code.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  gp_qr_code.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 // A QR code drawn by the app itself: the `qr` package encodes, this paints.
 // Square modules, dark on light in both themes, so any gate scanner reads it.
 import 'package:flutter/widgets.dart';

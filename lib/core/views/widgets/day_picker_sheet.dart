@@ -1,4 +1,11 @@
-// Gatepass — day_picker_sheet.dart. Created 2026-10-18.
+//
+//  Gatepass
+//  day_picker_sheet.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 // Day and time pickers in the app's own sheet, in place of Material's
 // date and time dialogs.
 import 'package:flutter/widgets.dart';

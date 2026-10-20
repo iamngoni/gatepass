@@ -1,4 +1,11 @@
-// Gatepass — custom_token_exchange_dto.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  custom_token_exchange_dto.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'custom_token_exchange_dto.freezed.dart';

@@ -1,4 +1,11 @@
-// Gatepass — blocs_test.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  blocs_test.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';

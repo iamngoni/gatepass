@@ -1,4 +1,11 @@
-// Gatepass — appearance_event.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  appearance_event.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 part of 'appearance_bloc.dart';
 
 @freezed

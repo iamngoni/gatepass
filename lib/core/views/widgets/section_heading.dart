@@ -1,4 +1,11 @@
-// Gatepass — section_heading.dart. Created 2026-10-18.
+//
+//  Gatepass
+//  section_heading.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:flutter/widgets.dart';
 
 import '../../configs/gp_spacing.dart';

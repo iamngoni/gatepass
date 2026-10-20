@@ -1,4 +1,11 @@
-// Gatepass — invite_merge.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  invite_merge.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import '../../invites/models/data/invite.dart';
 import '../../invites/models/data/invite_status.dart';
 

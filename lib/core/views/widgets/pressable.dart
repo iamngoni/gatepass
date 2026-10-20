@@ -1,4 +1,11 @@
-// Gatepass — pressable.dart. Created 2026-10-18.
+//
+//  Gatepass
+//  pressable.dart
+//
+//  Created by Ngonidzashe Mangudya on 18/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import 'package:flutter/widgets.dart';
 
 /// The one tap response, used instead of ink: a quick fade to 55% and a 3%

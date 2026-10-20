@@ -1,4 +1,11 @@
-// Gatepass — share_sheet.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  share_sheet.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 // Sharing an invite through the phone's own share sheet: the bare code, ATG's
 // visitor link, a picture of the gate pass, or (for people) a full message.
 import 'package:flutter/widgets.dart';

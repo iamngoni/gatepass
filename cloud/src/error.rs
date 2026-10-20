@@ -1,3 +1,11 @@
+//
+//  Gatepass
+//  error.rs
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 //! The API's error shape: a stable status and a short, non-sensitive code.
 //!
 //! The app relies on 401, 404 (no backup yet), 409 (stale version) and 429.

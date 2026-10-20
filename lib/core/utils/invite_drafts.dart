@@ -1,4 +1,11 @@
-// Gatepass — invite_drafts.dart. Created 2026-10-19.
+//
+//  Gatepass
+//  invite_drafts.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
+
 import '../../invites/models/data/delivery_service.dart';
 import '../../invites/models/data/invite.dart';
 import '../../invites/models/data/invite_draft.dart';

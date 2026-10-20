@@ -1,4 +1,10 @@
-// Gatepass — date_helpers.dart. Created 2026-10-18.
+//
+//  Gatepass
+//  date_helpers.dart
+//
+//  Created by Ngonidzashe Mangudya on 19/10/2026.
+//  Copyright (c) 2026 Codecraft Solutions.
+//
 
 /// Midnight at the start of [t]'s day.
 DateTime dateOnly(DateTime t) => DateTime(t.year, t.month, t.day);
