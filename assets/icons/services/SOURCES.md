@@ -6,6 +6,9 @@ are used to identify the delivery and ride services residents can let in.
 Trademarks and artwork belong to their respective owners.
 `indrive.jpg`, `clicks.jpg`, `dischem.jpg` and `temu.jpg` are cropped to
 remove corners drawn into the artwork.
+`picup.jpg` is the Google Play icon of Picup's driver app
+(`com.picup.driver.two`), fetched on 2026-10-20 and flattened onto white,
+because Picup has no customer app in the App Store.
 
 | File | App | Bundle ID |
 | --- | --- | --- |

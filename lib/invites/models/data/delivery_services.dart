@@ -159,6 +159,13 @@ const deliveryServices = [
     iconAsset: 'assets/icons/services/courier-guy.jpg',
   ),
   DeliveryService(
+    id: 'picup',
+    name: 'Picup',
+    kind: ServiceKind.parcel,
+    window: Duration(hours: 4),
+    iconAsset: 'assets/icons/services/picup.jpg',
+  ),
+  DeliveryService(
     id: 'dhl',
     name: 'DHL',
     kind: ServiceKind.parcel,
